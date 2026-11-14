@@ -39,8 +39,9 @@ $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
 # ------------------------------------------------------------------ load code
-# A built single-file version defines RB_CODE / RB_EMBED before this point.
-if (-not $Global:RB_CODE) {
+# A built single-file version (build\build.ps1) defines RB_CODE / RB_EMBED here.
+#@@RB_EMBED@@
+if (-not $Global:RB_EMBED) {
     $root = $PSScriptRoot
     $Global:RB_ROOT = $root
     $parts = @('src\Core.ps1', 'src\Engine.ps1')

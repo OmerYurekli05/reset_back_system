@@ -1,13 +1,22 @@
 # GUI smoke test: opens the window, waits for the scan, saves screenshots,
 # switches to restore mode with a given backup, saves another screenshot, closes.
 # Usage: powershell -NoProfile -ExecutionPolicy Bypass -File tests\gui-smoke.ps1 -OutDir <dir> [-BackupPath <dir>] [-Lang tr]
-param([Parameter(Mandatory = $true)][string]$OutDir, [string]$BackupPath, [string]$Lang = 'tr')
+param([Parameter(Mandatory = $true)][string]$OutDir, [string]$BackupPath, [string]$Lang = 'tr', [string]$SingleFile)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$Global:RB_ROOT = $root
-$parts = @('src\Core.ps1', 'src\Engine.ps1') + @(Get-ChildItem (Join-Path $root 'src\Providers') -Filter *.ps1 | Sort-Object Name | ForEach-Object { 'src\Providers\' + $_.Name }) + @('src\Gui.ps1')
-$Global:RB_CODE = ($parts | ForEach-Object { [IO.File]::ReadAllText((Join-Path $root $_), [Text.Encoding]::UTF8) }) -join "`r`n"
+if ($SingleFile) {
+    # use the embedded code/resources of a built dist\ResetBack.ps1
+    $txt = [IO.File]::ReadAllText($SingleFile, [Text.Encoding]::UTF8)
+    $m = [regex]::Match($txt, '(?s)# ---- embedded by build.*?# ---- end of embedded block ----')
+    if (-not $m.Success) { throw 'embedded block not found' }
+    Invoke-Expression $m.Value
+    $Global:RB_ROOT = Split-Path -Parent $SingleFile
+} else {
+    $Global:RB_ROOT = $root
+    $parts = @('src\Core.ps1', 'src\Engine.ps1') + @(Get-ChildItem (Join-Path $root 'src\Providers') -Filter *.ps1 | Sort-Object Name | ForEach-Object { 'src\Providers\' + $_.Name }) + @('src\Gui.ps1')
+    $Global:RB_CODE = ($parts | ForEach-Object { [IO.File]::ReadAllText((Join-Path $root $_), [Text.Encoding]::UTF8) }) -join "`r`n"
+}
 . ([scriptblock]::Create($Global:RB_CODE))
 Set-RBLanguage $Lang
 New-Item -ItemType Directory -Force $OutDir | Out-Null
