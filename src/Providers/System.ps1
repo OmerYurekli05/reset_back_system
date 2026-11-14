@@ -63,7 +63,16 @@ Register-RBProvider @{
         $ok = 0
         foreach ($f in $files) {
             $r = Invoke-RBExe (Get-RBSys32 'netsh.exe') ('wlan add profile filename="{0}" user=all' -f $f.FullName)
-            if ($r.Code -eq 0) { $ok++; Write-RBLog ('    ' + $f.BaseName) } else { Write-RBLog ('    !! ' + $f.BaseName) 'warn' }
+            if ($r.Code -ne 0) {
+                # some profiles (e.g. per-user enterprise ones) only import for the current user
+                $r2 = Invoke-RBExe (Get-RBSys32 'netsh.exe') ('wlan add profile filename="{0}" user=current' -f $f.FullName)
+                if ($r2.Code -eq 0) { $r = $r2 }
+            }
+            if ($r.Code -eq 0) { $ok++; Write-RBLog ('    ' + $f.BaseName) }
+            else {
+                $why = (($r.Output -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -First 1)
+                Write-RBLog ('    !! {0}: {1}' -f $f.BaseName, $why) 'warn'
+            }
         }
         Write-RBLog (T 'log.wifi.restored' $ok $files.Count) 'ok'
     }

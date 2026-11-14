@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2026-11-14
+- Komut satırında tek öğe seçilince "Seçili öğe yok" hatası düzeltildi (PS 5.1 tekil nesne .Count sorunu)
+- Wi-Fi geri yüklemede sadece mevcut kullanıcıya eklenebilen profiller için yedek yöntem; hata nedeni loga yazılıyor (49/49)
+- Yönetici modülleri gerçek ortamda doğrulandı: 184 sürücü paketi, 49 Wi-Fi ağı, güç planı, BitLocker, registry, MSI Afterburner
+
 ## 1.0.0 - 2026-11-14
 - Tek dosyalık derleme (`build/build.ps1`): kod, dil dosyaları, kataloglar ve arayüz tek `ResetBack.ps1` içinde; release zip'i
 - README kullanım kılavuzu (TR/EN), ekran görüntüleri, katalog rehberi (`docs/CATALOG.md`)

@@ -187,6 +187,12 @@ Test-Case 'program name keys ignore versions and architecture' {
     Assert-Equal (ConvertTo-RBProgramKey 'Notepad++ (64-bit x64)') 'notepad'
 }
 
+Test-Case 'CLI accepts a single selected item (PS 5.1 scalar .Count regression)' {
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'ResetBack.ps1') -Backup -Target (Join-Path $tmp 'cli') -Items 'system.envvars' -DryRun -Lang en 2>&1 | Out-String
+    Assert-True ($out -notmatch 'Nothing selected') 'single item was not selected'
+    Assert-True ($out -match 'Succeeded: 1') 'single item did not run'
+}
+
 if (-not $SkipDiscovery) {
     Test-Case 'discovery on this machine returns unique, well-formed items' {
         $all = @(Get-RBBackupItems)

@@ -110,7 +110,7 @@ if ($Restore) {
     if (-not $Source) { Write-RBLog (T 'cli.need.source') 'error'; exit 2 }
     $info = Get-RBRestoreItems $Source
     Write-RBLog (T 'cli.backup.info' $info.Dir $info.Manifest.created $info.Manifest.computer) 'step'
-    $sel = Select-RBItems -Items $info.Items -Ids $Items -ProfilePath $ProfilePath -All:$All
+    $sel = @(Select-RBItems -Items $info.Items -Ids $Items -ProfilePath $ProfilePath -All:$All)
     if ($SaveProfilePath) { Save-RBProfile $info.Items $SaveProfilePath 'restore'; Write-RBLog (T 'gui.profile.saved' $SaveProfilePath) 'ok' }
     if ($List) { Write-RBItemTable $info.Items; return }
     if (-not $sel.Count) { Write-RBLog (T 'cli.nothing') 'warn'; exit 0 }
@@ -120,7 +120,7 @@ if ($Restore) {
 }
 
 $found = @(Get-RBBackupItems)
-$sel = Select-RBItems -Items $found -Ids $Items -ProfilePath $ProfilePath -All:$All
+$sel = @(Select-RBItems -Items $found -Ids $Items -ProfilePath $ProfilePath -All:$All)
 if ($SaveProfilePath) { Save-RBProfile $found $SaveProfilePath 'backup'; Write-RBLog (T 'gui.profile.saved' $SaveProfilePath) 'ok' }
 if ($List -and -not $Backup) { Write-RBItemTable $found; return }
 if (-not $Backup) { return }

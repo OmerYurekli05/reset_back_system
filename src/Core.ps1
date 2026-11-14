@@ -5,7 +5,7 @@
 if (-not $Global:RB_ROOT) { $Global:RB_ROOT = (Get-Location).Path }
 
 $Global:RB = @{
-    Version      = '1.0.0'
+    Version      = '1.0.1'
     Root         = $Global:RB_ROOT
     Lang         = 'en'
     Strings      = @{}
