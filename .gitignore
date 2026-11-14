@@ -1,0 +1,18 @@
+# Yedek çıktıları / backup output (kişisel veri içerir, repoya girmesin)
+Yedek-*/
+Backup-*/
+backups/
+*.log
+
+# Derleme çıktıları / build output
+dist/
+*.exe
+
+# Yerel kullanıcı ayarları / local settings
+settings.local.json
+
+# Editör / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
