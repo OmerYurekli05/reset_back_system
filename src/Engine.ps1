@@ -27,6 +27,9 @@ function Select-RBItems {
     if ($ProfilePath) {
         $prof = Read-RBJsonFile $ProfilePath
         $Ids = @($prof.items)
+        if ($prof.programsInclude -or $prof.programsExclude) {
+            Set-RBProgramFilter -Items $Items -Include @($prof.programsInclude) -Exclude @($prof.programsExclude)
+        }
     }
     $Ids = @($Ids | ForEach-Object { ([string]$_) -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     foreach ($it in $Items) {
@@ -43,6 +46,8 @@ function Select-RBItems {
 function Save-RBProfile {
     param([object[]]$Items, [string]$Path, [string]$Mode = 'backup')
     $p = [ordered]@{ tool = 'reset_back_system'; type = 'profile'; mode = $Mode; items = @($Items | Where-Object { $_.Selected } | ForEach-Object { $_.Id }) }
+    $ex = @($Items | Where-Object { $_.Data -and $_.Data.packages } | ForEach-Object { $_.Data.exclude } | Where-Object { $_ })
+    if ($ex.Count) { $p.programsExclude = $ex }
     Write-RBJsonFile $p $Path
 }
 
@@ -197,6 +202,11 @@ function Get-RBRestoreItems {
             -Description ([string]$e.description) -DescKey ([string]$e.descKey) -DescArgs @($e.descArgs) -Order ([int]$e.order) `
             -Sensitive ([bool]$e.sensitive) -RequiresAdmin ([bool]$e.requiresAdmin) -RestoreSupported ([bool]$e.restoreSupported) `
             -Processes @($e.processes) -Data $data -DefaultSelected $true
+        if ($data.packages -and @($it.DescArgs).Count -ge 2) {
+            # programs item: show how many packages the backup really holds
+            $it.DescArgs = @(@($it.DescArgs)[0], @($data.packages).Count)
+            Update-RBItemText $it
+        }
         $it.BackupDir = Join-Path $dir ([string]$e.dir)
         $it.Size = Get-RBSize $it.BackupDir 1500
         # Sensitive items are selected on restore: the user already chose to back them up.

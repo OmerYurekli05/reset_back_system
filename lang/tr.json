@@ -6,7 +6,7 @@
   "cat.apps": "Uygulama ayarları ve kayıtları",
 
   "item.programs.name": "Kurulu programlar (winget)",
-  "item.programs.desc": "{0} program bulundu. winget listesi ile format sonrası toplu kurulur; winget'te olmayanlar \"elle kur\" listesine düşer.",
+  "item.programs.desc": "{0} program bulundu, {1} tanesi winget ile format sonrası otomatik kurulabilir. Aşağıdan tek tek seçebilirsin; winget'te olmayanlar \"elle kur\" listesine düşer.",
   "item.programs.desc.nowinget": "{0} program bulundu. winget yok: sadece liste yedeklenir (Microsoft Store'dan 'Uygulama Yükleyici' kur).",
   "item.editor.desc": "{0} eklenti + kullanıcı ayarları (settings.json, kısayollar, snippet'ler)",
   "item.drivers.name": "Sürücüler",
@@ -161,6 +161,15 @@
   "err.registry": "Registry dışa aktarılamadı (kod {0})",
   "registry.readme": "Bu .reg dosyaları sadece başvuru içindir. Bir ayarı bulmak gerekirse Not Defteri ile açıp ara.\r\nDosyanın tamamını çift tıklayıp YÜKLEME: yeni Windows kurulumunu bozabilir.\r\n",
   "log.app.running.backup": "Açık programlar: {0}. Dosyalar kilitliyse yedek eksik olabilir, kapatman önerilir.",
+
+  "log.winget.reading": "winget paket listesi okunuyor...",
+  "log.winget.excluded": "{0} program listeden çıkarıldı (kurulmayacak)",
+  "log.winget.selected": "{0}/{1} program seçildi",
+  "log.winget.none": "Kurulacak program seçilmedi, winget atlandı",
+  "gui.programs.pick": "Programları tek tek seç ({0}/{1} seçili)",
+  "gui.programs.filter": "Ara:",
+  "gui.programs.all": "Görünenleri seç",
+  "gui.programs.none": "Görünenleri kaldır",
 
   "cli.flags": "Simgeler: * = seçili  S = hassas veri  A = yönetici gerekir  B = sadece yedeklenir",
   "cli.not.admin": "Yönetici olarak çalışmıyor. Sürücü, Wi-Fi, güç planı gibi öğeler için PowerShell'i yönetici olarak aç.",

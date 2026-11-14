@@ -15,6 +15,7 @@
     .\ResetBack.ps1 -Restore -Source D:\ -List
     .\ResetBack.ps1 -List -Items 'programs.*','app.git' -SaveProfilePath my.json
     .\ResetBack.ps1 -Backup -Target D:\ -ProfilePath .\profiles\developer.json
+    .\ResetBack.ps1 -Restore -Source D:\ -Items programs.winget -ExcludePrograms '*Steam*','Discord.Discord'
 #>
 [CmdletBinding()]
 param(
@@ -26,6 +27,8 @@ param(
     [string[]]$Items,
     [string]$ProfilePath,
     [string]$SaveProfilePath,
+    [string[]]$IncludePrograms,
+    [string[]]$ExcludePrograms,
     [switch]$All,
     [switch]$DryRun,
     [switch]$NoOverwrite,
@@ -72,6 +75,15 @@ function Write-RBItemTable {
             if (-not $it.RestoreSupported) { $flags += 'B' } else { $flags += ' ' }
             Write-Host ('  [{0}] {1,-24} {2,9}  {3}' -f $flags, $it.Id, (Format-RBSize $it.Size), $it.Name) -ForegroundColor White
             if ($it.Description) { Write-Host ('         ' + $it.Description) -ForegroundColor DarkGray }
+            if ($it.Data -and $it.Data.packages -and @($it.Data.packages).Count) {
+                $ex = @($it.Data.exclude | Where-Object { $_ })
+                $pk = @($it.Data.packages)
+                Write-Host ('         ' + (T 'gui.programs.pick' ($pk.Count - @($pk | Where-Object { $ex -contains $_.id }).Count) $pk.Count)) -ForegroundColor DarkCyan
+                foreach ($p in $pk) {
+                    $mark = if ($ex -contains $p.id) { '[ ]' } else { '[x]' }
+                    Write-Host ('           {0} {1}  ({2})' -f $mark, $p.name, $p.id) -ForegroundColor DarkGray
+                }
+            }
         }
     }
     Write-Host ''
@@ -111,6 +123,7 @@ if ($Restore) {
     $info = Get-RBRestoreItems $Source
     Write-RBLog (T 'cli.backup.info' $info.Dir $info.Manifest.created $info.Manifest.computer) 'step'
     $sel = @(Select-RBItems -Items $info.Items -Ids $Items -ProfilePath $ProfilePath -All:$All)
+    Set-RBProgramFilter -Items $info.Items -Include $IncludePrograms -Exclude $ExcludePrograms
     if ($SaveProfilePath) { Save-RBProfile $info.Items $SaveProfilePath 'restore'; Write-RBLog (T 'gui.profile.saved' $SaveProfilePath) 'ok' }
     if ($List) { Write-RBItemTable $info.Items; return }
     if (-not $sel.Count) { Write-RBLog (T 'cli.nothing') 'warn'; exit 0 }
@@ -121,6 +134,7 @@ if ($Restore) {
 
 $found = @(Get-RBBackupItems)
 $sel = @(Select-RBItems -Items $found -Ids $Items -ProfilePath $ProfilePath -All:$All)
+Set-RBProgramFilter -Items $found -Include $IncludePrograms -Exclude $ExcludePrograms
 if ($SaveProfilePath) { Save-RBProfile $found $SaveProfilePath 'backup'; Write-RBLog (T 'gui.profile.saved' $SaveProfilePath) 'ok' }
 if ($List -and -not $Backup) { Write-RBItemTable $found; return }
 if (-not $Backup) { return }

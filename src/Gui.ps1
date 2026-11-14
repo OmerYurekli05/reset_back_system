@@ -89,6 +89,103 @@ function New-RBBadge {
     return $b
 }
 
+# ---- per-program picker shown under the winget item
+
+function Get-RBUiPackageHeader {
+    param($Item)
+    $all = @($Item.Data.packages)
+    $ex = @($Item.Data.exclude | Where-Object { $_ })
+    return (T 'gui.programs.pick' ($all.Count - @($all | Where-Object { $ex -contains $_.id }).Count) $all.Count)
+}
+
+function Set-RBUiPackage {
+    param($Item, [string]$Id, [bool]$On)
+    $ex = New-Object System.Collections.ArrayList
+    foreach ($x in @($Item.Data.exclude | Where-Object { $_ })) { if ($x -ne $Id) { [void]$ex.Add($x) } }
+    if (-not $On) { [void]$ex.Add($Id) }
+    $Item.Data.exclude = $ex.ToArray()
+}
+
+function New-RBUiPackagePicker {
+    param($Item, [bool]$Enabled)
+    $exp = New-Object Windows.Controls.Expander
+    $exp.Margin = New-Object Windows.Thickness 46, 0, 0, 8
+    $exp.Header = Get-RBUiPackageHeader $Item
+    $exp.Foreground = New-RBBrush '#1D4ED8'
+    $exp.IsEnabled = $Enabled
+    $exp.Tag = $Item.Id
+    if (-not $Global:RBGui.Expanded) { $Global:RBGui.Expanded = @{} }
+    $exp.IsExpanded = [bool]$Global:RBGui.Expanded[$Item.Id]
+    $exp.Add_Expanded({ param($s, $e) $Global:RBGui.Expanded[$s.Tag] = $true })
+    $exp.Add_Collapsed({ param($s, $e) $Global:RBGui.Expanded[$s.Tag] = $false })
+
+    $panel = New-Object Windows.Controls.StackPanel
+    $panel.Margin = New-Object Windows.Thickness 0, 6, 0, 0
+    $bar = New-Object Windows.Controls.StackPanel
+    $bar.Orientation = 'Horizontal'
+    $bar.Margin = New-Object Windows.Thickness 0, 0, 0, 6
+    $lbl = New-Object Windows.Controls.TextBlock
+    $lbl.Text = T 'gui.programs.filter'
+    $lbl.VerticalAlignment = 'Center'
+    $lbl.Foreground = New-RBBrush '#374151'
+    $lbl.Margin = New-Object Windows.Thickness 0, 0, 6, 0
+    $box = New-Object Windows.Controls.TextBox
+    $box.Width = 220
+    $box.Padding = New-Object Windows.Thickness 4, 2, 4, 2
+    $wrap = New-Object Windows.Controls.WrapPanel
+    $btnAll = New-Object Windows.Controls.Button
+    $btnAll.Content = T 'gui.programs.all'
+    $btnAll.Margin = New-Object Windows.Thickness 8, 0, 0, 0
+    $btnNone = New-Object Windows.Controls.Button
+    $btnNone.Content = T 'gui.programs.none'
+    [void]$bar.Children.Add($lbl); [void]$bar.Children.Add($box); [void]$bar.Children.Add($btnAll); [void]$bar.Children.Add($btnNone)
+
+    $ex = @($Item.Data.exclude | Where-Object { $_ })
+    foreach ($p in @($Item.Data.packages)) {
+        $c = New-Object Windows.Controls.CheckBox
+        $c.Width = 270
+        $c.Margin = New-Object Windows.Thickness 0, 2, 8, 2
+        $c.Content = [string]$p.name
+        $c.ToolTip = '{0}  ({1})' -f $p.id, $p.source
+        $c.IsChecked = ($ex -notcontains $p.id)
+        $c.Foreground = New-RBBrush '#111827'
+        $c.Tag = @{ Item = $Item; Id = [string]$p.id; Text = ([string]$p.name + ' ' + [string]$p.id); Exp = $exp }
+        $c.Add_Click({
+                param($s, $e)
+                Set-RBUiPackage $s.Tag.Item $s.Tag.Id ($s.IsChecked -eq $true)
+                $s.Tag.Exp.Header = Get-RBUiPackageHeader $s.Tag.Item
+            })
+        [void]$wrap.Children.Add($c)
+    }
+    $box.Tag = $wrap
+    $box.Add_TextChanged({
+            param($s, $e)
+            $q = $s.Text.Trim()
+            foreach ($c in $s.Tag.Children) {
+                $show = (-not $q) -or ($c.Tag.Text.IndexOf($q, [StringComparison]::OrdinalIgnoreCase) -ge 0)
+                $c.Visibility = if ($show) { 'Visible' } else { 'Collapsed' }
+            }
+        })
+    $handler = {
+        param($s, $e)
+        foreach ($c in $s.Tag.Wrap.Children) {
+            if ($c.Visibility -ne 'Visible') { continue }
+            $c.IsChecked = $s.Tag.On
+            Set-RBUiPackage $c.Tag.Item $c.Tag.Id $s.Tag.On
+        }
+        $s.Tag.Exp.Header = Get-RBUiPackageHeader $s.Tag.Item
+    }
+    $btnAll.Tag = @{ Wrap = $wrap; Item = $Item; Exp = $exp; On = $true }
+    $btnNone.Tag = @{ Wrap = $wrap; Item = $Item; Exp = $exp; On = $false }
+    $btnAll.Add_Click($handler)
+    $btnNone.Add_Click($handler)
+
+    [void]$panel.Children.Add($bar)
+    [void]$panel.Children.Add($wrap)
+    $exp.Content = $panel
+    return $exp
+}
+
 function Update-RBUiList {
     $ui = $Global:RBUI; $g = $Global:RBGui
     $ui.ItemsPanel.Children.Clear()
@@ -153,6 +250,9 @@ function Update-RBUiList {
                     Update-RBUiStart
                 })
             [void]$ui.ItemsPanel.Children.Add($cb)
+            if ($it.Data -and $it.Data.packages -and @($it.Data.packages).Count -gt 0) {
+                [void]$ui.ItemsPanel.Children.Add((New-RBUiPackagePicker $it $enabled))
+            }
         }
     }
     Update-RBUiHeaders
@@ -398,7 +498,7 @@ function Show-RBGui {
                 'ScanBtn', 'ItemsPanel', 'EmptyText', 'AllBtn', 'NoneBtn', 'SaveProfileBtn', 'LoadProfileBtn', 'DryRunChk', 'OverwriteChk',
                 'StartBtn', 'Progress', 'StatusText', 'LogBox')) { $ui[$n] = $win.FindName($n) }
         $Global:RBUI = $ui
-        $Global:RBGui = @{ Items = @(); Mode = 'backup'; Worker = $null; BackupDir = $null; IsAdmin = (Test-RBAdmin); Busy = $false }
+        $Global:RBGui = @{ Items = @(); Mode = 'backup'; Worker = $null; BackupDir = $null; IsAdmin = (Test-RBAdmin); Busy = $false; Expanded = @{} }
         $Global:RB.LogSink = { param($l, $m) Add-RBUiLog $l $m }
 
         $ui.ModeBackup.Add_Checked({ if ($Global:RBGui.Mode -ne 'backup') { Set-RBUiMode 'backup' } })

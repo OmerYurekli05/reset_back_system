@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 - 2026-11-14
+- **Programları tek tek seçme:** winget listesindeki her program ayrı onay kutusu; arama kutusu, "görünenleri seç/kaldır"
+  - Yedeklerken çıkarılan programlar yedeğe girmez, geri yüklerken çıkarılanlar kurulmaz
+  - Çıkarılan programlar "elle kur" listesinde gösterilmez
+- Program adları `winget list` çıktısından alınır (Store uygulamaları dahil okunur adlar, dilden bağımsız)
+- Komut satırı: `-IncludePrograms` / `-ExcludePrograms` (joker karakter, id ya da ad)
+- Profiller program seçimini de saklar (`programsExclude`)
+- Düzeltme: paket listesi olmayan öğelerde boş program seçici görünmesi
+
 ## 1.0.2 - 2026-11-14
 - Release artık `ResetBack.exe` içeriyor (ps2exe ile derlendi, yönetici olarak açılır, konsol penceresi yok)
 - .exe gerçek ortamda doğrulandı: pencere açılıyor, arka plan taraması tamamlanıyor

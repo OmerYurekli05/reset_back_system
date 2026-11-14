@@ -187,6 +187,32 @@ Test-Case 'program name keys ignore versions and architecture' {
     Assert-Equal (ConvertTo-RBProgramKey 'Notepad++ (64-bit x64)') 'notepad'
 }
 
+Test-Case 'winget subset keeps only selected packages' {
+    $src = Join-Path $tmp 'wg.json'
+    $j = @{ '$schema' = 'x'; Sources = @(@{ SourceDetails = @{ Name = 'winget' }; Packages = @(@{ PackageIdentifier = 'A.One' }, @{ PackageIdentifier = 'B.Two' }, @{ PackageIdentifier = 'C.Three' }) }) }
+    Write-RBJsonFile $j $src
+    $dst = Join-Path $tmp 'wg-sub.json'
+    Write-RBWingetSubset $src $dst @('B.Two', 'C.Three')
+    Assert-Equal (Get-RBWingetPackageCount $dst) 1
+    $r = Read-RBJsonFile $dst
+    Assert-Equal @(@($r.Sources)[0].Packages)[0].PackageIdentifier 'A.One'
+    Assert-True ($r.ContainsKey('$schema')) 'schema kept'
+}
+
+Test-Case 'program include/exclude filters and profiles' {
+    $it = New-RBItem -Id 'programs.winget' -Provider programs -Category programs -Data @{ packages = @(
+            @{ id = 'Valve.Steam'; name = 'Steam' }, @{ id = 'Google.Chrome'; name = 'Google Chrome' }, @{ id = 'Discord.Discord'; name = 'Discord' }); exclude = @() }
+    Set-RBProgramFilter -Items @($it) -Exclude '*steam*'
+    Assert-Equal (@($it.Data.exclude) -join ',') 'Valve.Steam'
+    Set-RBProgramFilter -Items @($it) -Include 'Google*'
+    Assert-Equal @($it.Data.exclude).Count 2
+    $pf = Join-Path $tmp 'prof.json'
+    Save-RBProfile @($it) $pf
+    $it.Data.exclude = @()
+    [void](Select-RBItems -Items @($it) -ProfilePath $pf)
+    Assert-Equal @($it.Data.exclude).Count 2 'profile restores program exclusions'
+}
+
 Test-Case 'CLI accepts a single selected item (PS 5.1 scalar .Count regression)' {
     $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'ResetBack.ps1') -Backup -Target (Join-Path $tmp 'cli') -Items 'system.envvars' -DryRun -Lang en 2>&1 | Out-String
     Assert-True ($out -notmatch 'Nothing selected') 'single item was not selected'

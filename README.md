@@ -23,7 +23,7 @@ Kurulum gerektirmez: Windows'ta hazır gelen PowerShell 5.1 ve WPF ile çalış�
 ### Neler yedeklenir?
 | Kategori | İçerik | Geri yükleme |
 |---|---|---|
-| **Programlar** | Kurulu programların tam listesi + `winget export` | `winget import` ile en güncel sürümler kurulur. winget'te olmayanlar **"elle kur" listesi** olarak raporlanır |
+| **Programlar** | Kurulu programların tam listesi + `winget export` | Programları **tek tek seçebilirsin** (arama kutulu liste). Seçilenler `winget import` ile en güncel sürümle kurulur. winget'te olmayanlar **"elle kur" listesi** olarak raporlanır |
 | **Editörler** | VS Code, Insiders, Cursor, Windsurf, Antigravity, VSCodium: eklenti listesi + `User` ayarları | Ayarlar kopyalanır, eklentiler tek tek kurulur |
 | **Sürücüler** | `pnputil /export-driver` ile üçüncü parti sürücüler | `pnputil /add-driver`. Format sonrası internet yoksa hayat kurtarır |
 | **Wi-Fi** | Kayıtlı ağlar, şifreleriyle *(hassas)* | `netsh wlan add profile` |
@@ -56,6 +56,7 @@ Seçimini **Seçimi kaydet** ile bir dosyaya kaydedip sonra tekrar yükleyebilir
 .\ResetBack.ps1 -Restore -Source D:\                     # en son yedeği bulur
 .\ResetBack.ps1 -Restore -Source D:\ResetBack-2026-11-14_1530 -Items 'app.*' -NoOverwrite
 ```
+`-IncludePrograms` / `-ExcludePrograms` ile programları seç (ör. `-ExcludePrograms '*Steam*','Discord.Discord'`).
 Diğer parametreler: `-All`, `-Force` (açık programlara rağmen devam), `-Lang tr|en`, `-SaveProfilePath`, `-NoElevate`, `-Version`.
 
 ### Kataloğa uygulama ekleme
@@ -87,7 +88,7 @@ Proje yapısı: `src/Core.ps1` (yardımcılar), `src/Engine.ps1` (yedekle/geri y
 ### What gets backed up?
 | Category | Contents | Restore |
 |---|---|---|
-| **Programs** | Full list of installed programs + `winget export` | `winget import` installs the latest versions. Anything not on winget is reported as a **manual install list** |
+| **Programs** | Full list of installed programs + `winget export` | **Pick programs one by one** (searchable list). The chosen ones are installed with `winget import` at their latest version. Anything not on winget is reported as a **manual install list** |
 | **Editors** | VS Code, Insiders, Cursor, Windsurf, Antigravity, VSCodium: extension list + `User` settings | Settings copied back, extensions reinstalled |
 | **Drivers** | Third-party drivers via `pnputil /export-driver` | `pnputil /add-driver`. A lifesaver when there is no network after the reset |
 | **Wi-Fi** | Saved networks with passwords *(sensitive)* | `netsh wlan add profile` |
@@ -120,6 +121,7 @@ Save your selection with **Save selection** and load it later. Ready-made profil
 .\ResetBack.ps1 -Restore -Source D:\
 .\ResetBack.ps1 -Restore -Source D:\ResetBack-2026-11-14_1530 -Items 'app.*' -NoOverwrite
 ```
+Pick programs with `-IncludePrograms` / `-ExcludePrograms` (e.g. `-ExcludePrograms '*Steam*','Discord.Discord'`).
 More: `-All`, `-Force` (continue even if programs are running), `-Lang tr|en`, `-SaveProfilePath`, `-NoElevate`, `-Version`.
 
 ### Adding apps to the catalog

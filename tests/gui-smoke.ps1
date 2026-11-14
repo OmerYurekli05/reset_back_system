@@ -60,6 +60,25 @@ $Global:RBGuiOnShown = {
                     if (-not $g.Items.Count) { return }
                     $Global:SmokeResult.BackupItems = $g.Items.Count
                     Save-SmokeShot 'gui-backup.png'
+                    $Global:RBGui.Expanded['programs.winget'] = $true
+                    Update-RBUiList
+                    Save-SmokeShot 'gui-programs.png'
+                    # drive the picker: search "Epic", press "clear shown"
+                    $prog = $g.Items | Where-Object { $_.Id -eq 'programs.winget' } | Select-Object -First 1
+                    $exp = @($Global:RBUI.ItemsPanel.Children | Where-Object { $_ -is [Windows.Controls.Expander] })[0]
+                    if ($exp -and $prog) {
+                        $bar = $exp.Content.Children[0]
+                        $bar.Children[1].Text = 'Epic'
+                        $bar.Children[3].RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Primitives.ButtonBase]::ClickEvent)))
+                        $expected = @($prog.Data.packages | Where-Object { ($_.name + ' ' + $_.id) -match 'Epic' }).Count
+                        $Global:SmokeResult.PickerExcluded = @($prog.Data.exclude).Count
+                        $Global:SmokeResult.PickerExpected = $expected
+                        if (@($prog.Data.exclude).Count -ne $expected) { $Global:SmokeResult.Errors += 'picker exclude mismatch' }
+                        Save-SmokeShot 'gui-programs-filtered.png'
+                        $prog.Data.exclude = @()
+                    }
+                    $Global:RBGui.Expanded['programs.winget'] = $false
+                    Update-RBUiList
                     # dry-run backup through the GUI (exercises the background runspace)
                     $Global:RBUI.PathBox.Text = (Join-Path $Global:SmokeOut 'target')
                     $Global:RBUI.DryRunChk.IsChecked = $true
@@ -95,7 +114,7 @@ $Global:RBGuiOnShown = {
 }
 
 Show-RBGui
-"backupItems=$($Global:SmokeResult.BackupItems) restoreItems=$($Global:SmokeResult.RestoreItems) errors=$($Global:SmokeResult.Errors -join ',')"
+"backupItems=$($Global:SmokeResult.BackupItems) restoreItems=$($Global:SmokeResult.RestoreItems) pickerExcluded=$($Global:SmokeResult.PickerExcluded)/$($Global:SmokeResult.PickerExpected) errors=$($Global:SmokeResult.Errors -join ',')"
 "messages:"; $Global:SmokeMessages | ForEach-Object { '  - ' + ($_ -replace "`r`n", ' | ') }
 [IO.File]::WriteAllText((Join-Path $OutDir 'log.txt'), $Global:RBUI.LogBox.Text, [Text.Encoding]::UTF8)
 if ($Global:SmokeResult.Errors.Count -or -not $Global:SmokeResult.BackupItems) { exit 1 }
