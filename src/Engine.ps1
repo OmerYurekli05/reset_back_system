@@ -40,6 +40,12 @@ function Select-RBItems {
     return @($Items | Where-Object { $_.Selected })
 }
 
+function Save-RBProfile {
+    param([object[]]$Items, [string]$Path, [string]$Mode = 'backup')
+    $p = [ordered]@{ tool = 'reset_back_system'; type = 'profile'; mode = $Mode; items = @($Items | Where-Object { $_.Selected } | ForEach-Object { $_.Id }) }
+    Write-RBJsonFile $p $Path
+}
+
 function Get-RBDefaultTarget {
     $sys = $env:SystemDrive
     try {
@@ -91,6 +97,14 @@ function Write-RBSystemInfo {
             [void]$lines.Add(('Disk {0}  : {1:N0} GB, free {2:N0} GB ({3})' -f $d.DeviceID, ($d.Size / 1GB), ($d.FreeSpace / 1GB), $d.FileSystem))
         }
     } catch { }
+    if (Test-RBAdmin) {
+        try {
+            $boot = Invoke-RBExe (Join-Path $env:SystemRoot 'System32\bcdedit.exe') '/enum firmware'
+            [void]$lines.Add('')
+            [void]$lines.Add('---- bcdedit /enum firmware ----')
+            [void]$lines.Add($boot.Output)
+        } catch { }
+    }
     [IO.File]::WriteAllLines($Path, [string[]]$lines.ToArray(), [Text.Encoding]::UTF8)
 }
 
@@ -139,6 +153,8 @@ function Invoke-RBBackup {
             Write-RBLog (T 'log.need.admin') 'warn'
         } else {
             $itemDir = Join-Path $dir $it.Id
+            $running = @(Get-RBRunningProcesses $it.Processes)
+            if ($running.Count -and -not $dry) { Write-RBLog (T 'log.app.running.backup' ($running -join ', ')) 'warn' }
             try {
                 if (-not $dry) { New-Item -ItemType Directory -Force -Path $itemDir | Out-Null }
                 $prov = $Global:RB.Providers[$it.Provider]

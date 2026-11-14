@@ -114,5 +114,95 @@
     "processes": ["steam"],
     "default": false,
     "note": { "tr": "Oyun ayarları ve Steam ekran görüntüleri (çoğu Steam Cloud'da zaten var)", "en": "Game configs and Steam screenshots (most are already in Steam Cloud)" }
+  },
+  {
+    "id": "edge-bookmarks",
+    "name": "Microsoft Edge bookmarks",
+    "paths": ["%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Bookmarks"],
+    "processes": ["msedge"],
+    "note": { "tr": "Yer imleri (Microsoft hesabıyla senkronize değilse)", "en": "Bookmarks (if not synced with a Microsoft account)" }
+  },
+  {
+    "id": "brave-bookmarks",
+    "name": "Brave bookmarks",
+    "paths": ["%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Bookmarks"],
+    "processes": ["brave"],
+    "note": { "tr": "Yer imleri (Brave Sync kapalıysa)", "en": "Bookmarks (if Brave Sync is off)" }
+  },
+  {
+    "id": "firefox",
+    "name": "Mozilla Firefox profiles",
+    "paths": ["%APPDATA%\\Mozilla\\Firefox"],
+    "processes": ["firefox"],
+    "default": false,
+    "exclude": ["cache2", "startupCache", "crashes", "minidumps", "datareporting", "saved-telemetry-pings", "storage"],
+    "note": { "tr": "Yer imleri, geçmiş, eklentiler ve kayıtlı girişler (hesapla senkronize değilse)", "en": "Bookmarks, history, add-ons and saved logins (if not synced with an account)" }
+  },
+  {
+    "id": "thunderbird",
+    "name": "Mozilla Thunderbird",
+    "paths": ["%APPDATA%\\Thunderbird"],
+    "processes": ["thunderbird"],
+    "default": false,
+    "sensitive": true,
+    "note": { "tr": "E-posta profilleri ve yerel postalar (büyük olabilir)", "en": "Mail profiles and local mail (can be large)" }
+  },
+  {
+    "id": "vlc",
+    "name": "VLC media player",
+    "paths": ["%APPDATA%\\vlc\\vlcrc", "%APPDATA%\\vlc\\vlc-qt-interface.ini"],
+    "processes": ["vlc"],
+    "note": { "tr": "Oynatıcı ayarları", "en": "Player settings" }
+  },
+  {
+    "id": "qbittorrent",
+    "name": "qBittorrent",
+    "paths": ["%APPDATA%\\qBittorrent", "%LOCALAPPDATA%\\qBittorrent\\BT_backup"],
+    "processes": ["qbittorrent"],
+    "note": { "tr": "Ayarlar ve süren torrent listesi", "en": "Settings and the list of active torrents" }
+  },
+  {
+    "id": "sharex",
+    "name": "ShareX",
+    "paths": ["%DOCUMENTS%\\ShareX\\ApplicationConfig.json", "%DOCUMENTS%\\ShareX\\HotkeysConfig.json", "%DOCUMENTS%\\ShareX\\UploadersConfig.json"],
+    "processes": ["ShareX"],
+    "note": { "tr": "Kısayollar ve yükleme ayarları", "en": "Hotkeys and upload settings" }
+  },
+  {
+    "id": "rainmeter",
+    "name": "Rainmeter",
+    "paths": ["%APPDATA%\\Rainmeter", "%DOCUMENTS%\\Rainmeter\\Skins"],
+    "processes": ["Rainmeter"],
+    "note": { "tr": "Masaüstü bileşenleri ve düzenler", "en": "Desktop skins and layouts" }
+  },
+  {
+    "id": "filezilla",
+    "name": "FileZilla",
+    "paths": ["%APPDATA%\\FileZilla"],
+    "processes": ["filezilla"],
+    "sensitive": true,
+    "note": { "tr": "Site yöneticisi ve kayıtlı bağlantılar (şifre içerebilir)", "en": "Site manager and saved connections (may contain passwords)" }
+  },
+  {
+    "id": "winscp",
+    "name": "WinSCP",
+    "paths": ["%APPDATA%\\WinSCP.ini"],
+    "processes": ["WinSCP"],
+    "sensitive": true,
+    "note": { "tr": "Kayıtlı oturumlar (ayarlar INI dosyasındaysa)", "en": "Saved sessions (when settings are stored in the INI file)" }
+  },
+  {
+    "id": "dev-configs",
+    "name": "Developer configs (npm, pip, Docker, AWS, kube)",
+    "paths": ["%USERPROFILE%\\.npmrc", "%APPDATA%\\pip", "%USERPROFILE%\\.docker\\config.json", "%USERPROFILE%\\.aws", "%USERPROFILE%\\.kube"],
+    "sensitive": true,
+    "note": { "tr": "Geliştirici araç ayarları ve erişim anahtarları", "en": "Developer tool settings and access keys" }
+  },
+  {
+    "id": "blender",
+    "name": "Blender",
+    "paths": ["%APPDATA%\\Blender Foundation\\Blender"],
+    "processes": ["blender"],
+    "note": { "tr": "Tercihler, eklentiler ve başlangıç dosyası", "en": "Preferences, add-ons and startup file" }
   }
 ]

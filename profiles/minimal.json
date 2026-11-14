@@ -1,0 +1,7 @@
+{
+  "tool": "reset_back_system",
+  "type": "profile",
+  "mode": "backup",
+  "description": "Hızlı kurulum: programlar, editörler, Wi-Fi ve Git / Quick setup: programs, editors, Wi-Fi and Git",
+  "items": ["programs.winget", "editors.*", "system.wifi", "app.git"]
+}

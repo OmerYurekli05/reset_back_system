@@ -70,6 +70,14 @@ Test-Case 'editors catalog is valid' {
     foreach ($e in $cat) { Assert-True (@($e.cli).Count -and @($e.userDir).Count -and $e.name) "incomplete: $($e.id)" }
 }
 
+Test-Case 'bundled profiles are valid' {
+    foreach ($f in @(Get-ChildItem (Join-Path $root 'profiles') -Filter *.json)) {
+        $p = Read-RBJsonFile $f.FullName
+        Assert-Equal $p.tool 'reset_back_system' $f.Name
+        Assert-True (@($p.items).Count -gt 0) "no items: $($f.Name)"
+    }
+}
+
 Write-Host 'Core' -ForegroundColor Cyan
 
 Test-Case 'Expand-RBPath resolves tokens and env vars' {

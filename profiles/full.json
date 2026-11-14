@@ -1,0 +1,7 @@
+{
+  "tool": "reset_back_system",
+  "type": "profile",
+  "mode": "backup",
+  "description": "Her şey (büyük klasörler dahil) / Everything, including large folders",
+  "items": ["*"]
+}

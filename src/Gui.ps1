@@ -370,8 +370,7 @@ function Save-RBUiProfile {
     $dlg.Filter = 'JSON (*.json)|*.json'
     $dlg.FileName = 'resetback-profile.json'
     if (-not $dlg.ShowDialog($Global:RBUI.Window)) { return }
-    $p = [ordered]@{ tool = 'reset_back_system'; type = 'profile'; mode = $g.Mode; items = @($g.Items | Where-Object { $_.Selected } | ForEach-Object { $_.Id }) }
-    Write-RBJsonFile $p $dlg.FileName
+    Save-RBProfile $g.Items $dlg.FileName $g.Mode
     Add-RBUiLog 'ok' (T 'gui.profile.saved' $dlg.FileName)
 }
 
@@ -379,11 +378,11 @@ function Import-RBUiProfile {
     $g = $Global:RBGui
     $dlg = New-Object Microsoft.Win32.OpenFileDialog
     $dlg.Filter = 'JSON (*.json)|*.json'
+    $pd = Join-Path $Global:RB.Root 'profiles'
+    if (Test-Path -LiteralPath $pd) { $dlg.InitialDirectory = $pd }
     if (-not $dlg.ShowDialog($Global:RBUI.Window)) { return }
     try {
-        $p = Read-RBJsonFile $dlg.FileName
-        $ids = @($p.items)
-        foreach ($it in $g.Items) { $it.Selected = ($ids -contains $it.Id) }
+        [void](Select-RBItems -Items $g.Items -ProfilePath $dlg.FileName)
         Update-RBUiList
         Add-RBUiLog 'ok' (T 'gui.profile.loaded' $dlg.FileName)
     } catch { [void](Show-RBMessage $_.Exception.Message 'OK' 'Error') }

@@ -1,0 +1,7 @@
+{
+  "tool": "reset_back_system",
+  "type": "profile",
+  "mode": "backup",
+  "description": "Yazılımcı: programlar, editörler, terminal, Git/SSH, geliştirici ayarları, ortam değişkenleri / Developer setup",
+  "items": ["programs.winget", "editors.*", "system.wifi", "system.envvars", "system.hosts", "app.git", "app.ssh", "app.dev-configs", "app.claude-code", "app.windows-terminal", "app.powershell-profile", "userdata.desktop", "userdata.documents"]
+}
