@@ -14,7 +14,7 @@ Kurulum gerektirmez: Windows'ta hazır gelen PowerShell 5.1 ve WPF ile çalış�
 ### Hızlı başlangıç
 1. [Releases](https://github.com/OmerYurekli05/reset_back_system/releases) sayfasından son `reset_back_system-x.y.z.zip` dosyasını indir ve bir klasöre çıkar
    (ya da `git clone https://github.com/OmerYurekli05/reset_back_system.git`).
-2. **`ResetBack.cmd`** dosyasına çift tıkla. Program yönetici izni ister (sürücü, Wi-Fi, güç planı için gerekli).
+2. **`ResetBack.exe`** (ya da `ResetBack.cmd`) dosyasına çift tıkla. Program yönetici izni ister (sürücü, Wi-Fi, güç planı için gerekli).
 3. **Format öncesi:** "Yedekle"yi seç, hedef olarak **harici disk ya da D: gibi format atılmayacak bir disk** göster, istediklerini işaretle, *Yedekle*'ye bas.
 4. **Format sonrası:** programı tekrar aç, "Geri Yükle"yi seç. Yedek otomatik bulunur (ya da `ResetBack-tarih` klasörünü göster), *Geri yükle*'ye bas.
 
@@ -78,7 +78,7 @@ Proje yapısı: `src/Core.ps1` (yardımcılar), `src/Engine.ps1` (yedekle/geri y
 ### Quick start
 1. Download the latest `reset_back_system-x.y.z.zip` from [Releases](https://github.com/OmerYurekli05/reset_back_system/releases) and extract it
    (or `git clone https://github.com/OmerYurekli05/reset_back_system.git`).
-2. Double-click **`ResetBack.cmd`**. It asks for admin rights (needed for drivers, Wi-Fi and the power plan).
+2. Double-click **`ResetBack.exe`** (or `ResetBack.cmd`). It asks for admin rights (needed for drivers, Wi-Fi and the power plan).
 3. **Before the reset:** choose "Backup", point it to **an external drive or a disk that will not be wiped (e.g. D:)**, tick what you want, press *Back up*.
 4. **After the reset:** open it again, choose "Restore". The backup is found automatically (or point to the `ResetBack-date` folder), press *Restore*.
 

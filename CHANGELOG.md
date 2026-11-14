@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 - 2026-11-14
+- Release artık `ResetBack.exe` içeriyor (ps2exe ile derlendi, yönetici olarak açılır, konsol penceresi yok)
+- .exe gerçek ortamda doğrulandı: pencere açılıyor, arka plan taraması tamamlanıyor
+
 ## 1.0.1 - 2026-11-14
 - Komut satırında tek öğe seçilince "Seçili öğe yok" hatası düzeltildi (PS 5.1 tekil nesne .Count sorunu)
 - Wi-Fi geri yüklemede sadece mevcut kullanıcıya eklenebilen profiller için yedek yöntem; hata nedeni loga yazılıyor (49/49)
