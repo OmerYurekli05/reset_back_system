@@ -154,6 +154,14 @@
   "gui.done.restore": "Restore finished.\r\nSucceeded: {0}, failed: {1}, skipped: {2}\r\n\r\nLog: {3}\r\n\r\nRestarting the computer is recommended.",
   "gui.done.dry": "Dry run finished, nothing was changed.\r\nWould succeed: {0}, failed: {1}, skipped: {2}\r\n\r\nSee the log below for details.",
 
+  "item.registry.name": "Registry snapshot (reference)",
+  "item.registry.desc": "Exports HKCU (and HKLM\\SOFTWARE when admin). Kept only to look up a setting, never imported automatically.",
+  "log.dry.registry": "[dry run] would export the registry",
+  "log.registry.saved": "Registry snapshot saved",
+  "err.registry": "Could not export the registry (code {0})",
+  "registry.readme": "These .reg files are for reference only. Open them in Notepad to look up a setting.\r\nDo NOT double-click to import a whole file: it can break a fresh Windows install.\r\n",
+  "log.app.running.backup": "Running programs: {0}. If files are locked the backup may be incomplete, closing them is recommended.",
+
   "cli.flags": "Flags: * = selected  S = sensitive data  A = needs admin  B = backup only",
   "cli.not.admin": "Not running as administrator. Open PowerShell as administrator for drivers, Wi-Fi, power plan and similar items.",
   "cli.need.source": "No backup found. Point to the backup folder with -Source.",

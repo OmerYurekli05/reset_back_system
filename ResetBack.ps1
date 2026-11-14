@@ -13,6 +13,8 @@
     .\ResetBack.ps1 -Backup -Target D:\ -All -DryRun
     .\ResetBack.ps1 -Restore -Source D:\ResetBack-2026-11-14_1530
     .\ResetBack.ps1 -Restore -Source D:\ -List
+    .\ResetBack.ps1 -List -Items 'programs.*','app.git' -SaveProfilePath my.json
+    .\ResetBack.ps1 -Backup -Target D:\ -ProfilePath .\profiles\developer.json
 #>
 [CmdletBinding()]
 param(
@@ -23,6 +25,7 @@ param(
     [string]$Source,
     [string[]]$Items,
     [string]$ProfilePath,
+    [string]$SaveProfilePath,
     [switch]$All,
     [switch]$DryRun,
     [switch]$NoOverwrite,
@@ -75,7 +78,7 @@ function Write-RBItemTable {
 }
 
 # ------------------------------------------------------------------ GUI mode
-if (-not ($Backup -or $Restore -or $List)) {
+if (-not ($Backup -or $Restore -or $List -or $SaveProfilePath)) {
     if (-not (Get-Command Show-RBGui -ErrorAction SilentlyContinue)) {
         Get-Help $PSCommandPath -Detailed
         return
@@ -107,6 +110,7 @@ if ($Restore) {
     $info = Get-RBRestoreItems $Source
     Write-RBLog (T 'cli.backup.info' $info.Dir $info.Manifest.created $info.Manifest.computer) 'step'
     $sel = Select-RBItems -Items $info.Items -Ids $Items -ProfilePath $ProfilePath -All:$All
+    if ($SaveProfilePath) { Save-RBProfile $info.Items $SaveProfilePath 'restore'; Write-RBLog (T 'gui.profile.saved' $SaveProfilePath) 'ok' }
     if ($List) { Write-RBItemTable $info.Items; return }
     if (-not $sel.Count) { Write-RBLog (T 'cli.nothing') 'warn'; exit 0 }
     $r = Invoke-RBRestore -Items $sel -BackupDir $info.Dir
@@ -116,7 +120,9 @@ if ($Restore) {
 
 $found = @(Get-RBBackupItems)
 $sel = Select-RBItems -Items $found -Ids $Items -ProfilePath $ProfilePath -All:$All
+if ($SaveProfilePath) { Save-RBProfile $found $SaveProfilePath 'backup'; Write-RBLog (T 'gui.profile.saved' $SaveProfilePath) 'ok' }
 if ($List -and -not $Backup) { Write-RBItemTable $found; return }
+if (-not $Backup) { return }
 if (-not $Target) { Write-RBLog (T 'cli.need.target') 'error'; exit 2 }
 if (-not (Test-Path -LiteralPath $Target)) { New-Item -ItemType Directory -Force -Path $Target | Out-Null }
 if (-not $sel.Count) { Write-RBLog (T 'cli.nothing') 'warn'; exit 0 }

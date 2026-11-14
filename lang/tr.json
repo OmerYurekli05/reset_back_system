@@ -154,6 +154,14 @@
   "gui.done.restore": "Geri yükleme bitti.\r\nBaşarılı: {0}, hatalı: {1}, atlanan: {2}\r\n\r\nKayıt: {3}\r\n\r\nBilgisayarı yeniden başlatman önerilir.",
   "gui.done.dry": "Deneme bitti, hiçbir şey değiştirilmedi.\r\nYapılabilecek: {0}, hatalı: {1}, atlanan: {2}\r\n\r\nAyrıntılar alttaki kayıtta.",
 
+  "item.registry.name": "Registry yedeği (başvuru için)",
+  "item.registry.desc": "HKCU (ve yöneticiyse HKLM\\SOFTWARE) dışa aktarılır. Sadece bir ayarı bulmak için saklanır, otomatik yüklenmez.",
+  "log.dry.registry": "[deneme] registry dışa aktarılacak",
+  "log.registry.saved": "Registry yedeği kaydedildi",
+  "err.registry": "Registry dışa aktarılamadı (kod {0})",
+  "registry.readme": "Bu .reg dosyaları sadece başvuru içindir. Bir ayarı bulmak gerekirse Not Defteri ile açıp ara.\r\nDosyanın tamamını çift tıklayıp YÜKLEME: yeni Windows kurulumunu bozabilir.\r\n",
+  "log.app.running.backup": "Açık programlar: {0}. Dosyalar kilitliyse yedek eksik olabilir, kapatman önerilir.",
+
   "cli.flags": "Simgeler: * = seçili  S = hassas veri  A = yönetici gerekir  B = sadece yedeklenir",
   "cli.not.admin": "Yönetici olarak çalışmıyor. Sürücü, Wi-Fi, güç planı gibi öğeler için PowerShell'i yönetici olarak aç.",
   "cli.need.source": "Yedek bulunamadı. -Source ile yedek klasörünü belirt.",

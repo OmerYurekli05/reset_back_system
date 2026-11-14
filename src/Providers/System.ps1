@@ -233,3 +233,25 @@ Register-RBProvider @{
         Write-RBLog (T 'log.envvars.restored' $set $merged $kept) 'ok'
     }
 }
+
+# ------------------------------------------------------------------ registry snapshot (backup only)
+# Saved as reference only: importing a whole registry export onto a fresh
+# Windows can break it, so it is never restored automatically.
+Register-RBProvider @{
+    Name     = 'system.registry'
+    Discover = {
+        New-RBItem -Id 'system.registry' -Provider 'system.registry' -Category 'system' -NameKey 'item.registry.name' `
+            -DescKey 'item.registry.desc' -Order 58 -RestoreSupported $false -DefaultSelected $false
+    }
+    Backup   = {
+        param($Item, $Dir)
+        if ($Global:RB.DryRun) { Write-RBLog (T 'log.dry.registry'); return }
+        $reg = Get-RBSys32 'reg.exe'
+        $r = Invoke-RBExe $reg ('export HKCU "{0}" /y' -f (Join-Path $Dir 'HKCU-user.reg'))
+        if ($r.Code -ne 0) { throw (T 'err.registry' $r.Code) }
+        if (Test-RBAdmin) { [void](Invoke-RBExe $reg ('export "HKLM\SOFTWARE" "{0}" /y' -f (Join-Path $Dir 'HKLM-SOFTWARE.reg'))) }
+        [IO.File]::WriteAllText((Join-Path $Dir 'README.txt'), (T 'registry.readme'), [Text.Encoding]::UTF8)
+        Write-RBLog (T 'log.registry.saved') 'ok'
+    }
+    Restore  = $null
+}
