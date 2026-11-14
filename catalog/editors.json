@@ -1,0 +1,45 @@
+[
+  {
+    "id": "vscode",
+    "name": "Visual Studio Code",
+    "cli": ["%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\bin\\code.cmd", "%ProgramFiles%\\Microsoft VS Code\\bin\\code.cmd"],
+    "userDir": ["%APPDATA%\\Code\\User"],
+    "process": ["Code"]
+  },
+  {
+    "id": "vscode-insiders",
+    "name": "Visual Studio Code Insiders",
+    "cli": ["%LOCALAPPDATA%\\Programs\\Microsoft VS Code Insiders\\bin\\code-insiders.cmd", "%ProgramFiles%\\Microsoft VS Code Insiders\\bin\\code-insiders.cmd"],
+    "userDir": ["%APPDATA%\\Code - Insiders\\User"],
+    "process": ["Code - Insiders"]
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor",
+    "cli": ["%LOCALAPPDATA%\\Programs\\cursor\\resources\\app\\bin\\cursor.cmd"],
+    "userDir": ["%APPDATA%\\Cursor\\User"],
+    "process": ["Cursor"]
+  },
+  {
+    "id": "windsurf",
+    "name": "Windsurf",
+    "cli": ["%LOCALAPPDATA%\\Programs\\Windsurf\\bin\\windsurf.cmd"],
+    "userDir": ["%APPDATA%\\Windsurf\\User"],
+    "process": ["Windsurf"]
+  },
+  {
+    "id": "antigravity",
+    "name": "Antigravity IDE",
+    "cli": ["%LOCALAPPDATA%\\Programs\\Antigravity IDE\\bin\\antigravity-ide.cmd", "%LOCALAPPDATA%\\Programs\\Antigravity\\bin\\antigravity.cmd"],
+    "userDir": ["%APPDATA%\\Antigravity IDE\\User", "%APPDATA%\\Antigravity\\User"],
+    "process": ["Antigravity IDE", "Antigravity"],
+    "extra": ["%USERPROFILE%\\.antigravity-ide\\argv.json"]
+  },
+  {
+    "id": "vscodium",
+    "name": "VSCodium",
+    "cli": ["%LOCALAPPDATA%\\Programs\\VSCodium\\bin\\codium.cmd", "%ProgramFiles%\\VSCodium\\bin\\codium.cmd"],
+    "userDir": ["%APPDATA%\\VSCodium\\User"],
+    "process": ["VSCodium"]
+  }
+]

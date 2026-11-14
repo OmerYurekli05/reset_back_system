@@ -1,0 +1,118 @@
+[
+  {
+    "id": "ssh",
+    "name": "SSH keys (.ssh)",
+    "paths": ["%USERPROFILE%\\.ssh"],
+    "sensitive": true,
+    "note": { "tr": "SSH anahtarları. Yedeği güvenli bir yerde sakla.", "en": "SSH keys. Keep the backup somewhere safe." }
+  },
+  {
+    "id": "git",
+    "name": "Git (.gitconfig)",
+    "paths": ["%USERPROFILE%\\.gitconfig", "%USERPROFILE%\\.config\\git"],
+    "note": { "tr": "Git kullanıcı adı, e-posta ve ayarları", "en": "Git user name, e-mail and settings" }
+  },
+  {
+    "id": "claude-code",
+    "name": "Claude Code",
+    "paths": ["%USERPROFILE%\\.claude\\settings.json", "%USERPROFILE%\\.claude\\CLAUDE.md", "%USERPROFILE%\\.claude\\agents", "%USERPROFILE%\\.claude\\commands", "%USERPROFILE%\\.claude\\skills"],
+    "processes": ["claude"],
+    "note": { "tr": "Ayarlar, CLAUDE.md, ajanlar, komutlar ve skill'ler", "en": "Settings, CLAUDE.md, agents, commands and skills" }
+  },
+  {
+    "id": "powershell-profile",
+    "name": "PowerShell profile",
+    "paths": ["%DOCUMENTS%\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1", "%DOCUMENTS%\\PowerShell\\Microsoft.PowerShell_profile.ps1"],
+    "note": { "tr": "PowerShell profil betikleri", "en": "PowerShell profile scripts" }
+  },
+  {
+    "id": "windows-terminal",
+    "name": "Windows Terminal",
+    "paths": ["%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json"],
+    "processes": ["WindowsTerminal"],
+    "note": { "tr": "Terminal profilleri, temalar ve kısayollar", "en": "Terminal profiles, themes and key bindings" }
+  },
+  {
+    "id": "notepadpp",
+    "name": "Notepad++",
+    "paths": ["%APPDATA%\\Notepad++"],
+    "processes": ["notepad++"],
+    "exclude": ["backup"],
+    "note": { "tr": "Ayarlar, temalar, makrolar ve eklenti ayarları", "en": "Settings, themes, macros and plugin settings" }
+  },
+  {
+    "id": "sticky-notes",
+    "name": "Sticky Notes",
+    "paths": ["%LOCALAPPDATA%\\Packages\\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\\LocalState"],
+    "processes": ["Microsoft.Notes"],
+    "note": { "tr": "Yapışkan notlar (hesapla senkronize değilse)", "en": "Sticky notes (if not synced with an account)" }
+  },
+  {
+    "id": "chrome-bookmarks",
+    "name": "Google Chrome bookmarks",
+    "paths": ["%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Bookmarks"],
+    "processes": ["chrome"],
+    "note": { "tr": "Yer imleri (Chrome hesabıyla senkronize değilse)", "en": "Bookmarks (if not synced with a Chrome account)" }
+  },
+  {
+    "id": "obs-studio",
+    "name": "OBS Studio",
+    "paths": ["%APPDATA%\\obs-studio\\basic", "%APPDATA%\\obs-studio\\global.ini"],
+    "processes": ["obs64"],
+    "note": { "tr": "Sahneler, profiller ve ayarlar", "en": "Scenes, profiles and settings" }
+  },
+  {
+    "id": "minecraft",
+    "name": "Minecraft (.minecraft)",
+    "paths": ["%APPDATA%\\.minecraft\\saves", "%APPDATA%\\.minecraft\\screenshots", "%APPDATA%\\.minecraft\\resourcepacks", "%APPDATA%\\.minecraft\\shaderpacks", "%APPDATA%\\.minecraft\\options.txt", "%APPDATA%\\.minecraft\\servers.dat"],
+    "processes": ["javaw", "Minecraft", "MinecraftLauncher"],
+    "note": { "tr": "Dünyalar, ekran görüntüleri, paketler ve ayarlar. Önce başlatıcıyı bir kez açıp kapat.", "en": "Worlds, screenshots, packs and settings. Open and close the launcher once first." }
+  },
+  {
+    "id": "ets2",
+    "name": "Euro Truck Simulator 2",
+    "paths": ["%DOCUMENTS%\\Euro Truck Simulator 2"],
+    "processes": ["eurotrucks2"],
+    "exclude": ["cache", "mod"],
+    "note": { "tr": "Profiller ve ayarlar (modlar hariç)", "en": "Profiles and settings (mods excluded)" }
+  },
+  {
+    "id": "ats",
+    "name": "American Truck Simulator",
+    "paths": ["%DOCUMENTS%\\American Truck Simulator"],
+    "processes": ["amtrucks"],
+    "exclude": ["cache", "mod"],
+    "note": { "tr": "Profiller ve ayarlar (modlar hariç)", "en": "Profiles and settings (mods excluded)" }
+  },
+  {
+    "id": "logitech-ghub",
+    "name": "Logitech G HUB",
+    "paths": ["%LOCALAPPDATA%\\LGHUB\\settings.db", "%LOCALAPPDATA%\\LGHUB\\settings.db-shm", "%LOCALAPPDATA%\\LGHUB\\settings.db-wal", "%LOCALAPPDATA%\\LGHUB\\scripts", "%LOCALAPPDATA%\\LGHUB\\integrations_config"],
+    "processes": ["lghub", "lghub_agent", "lghub_updater", "lghub_system_tray"],
+    "note": { "tr": "Fare/klavye profilleri. G HUB'ı tamamen kapat (sağ alttan da çık).", "en": "Mouse/keyboard profiles. Close G HUB completely (also from the tray)." }
+  },
+  {
+    "id": "msi-afterburner",
+    "name": "MSI Afterburner",
+    "paths": ["%ProgramFiles(x86)%\\MSI Afterburner\\Profiles"],
+    "processes": ["MSIAfterburner"],
+    "admin": true,
+    "note": { "tr": "Hız aşırtma ve fan profilleri", "en": "Overclock and fan profiles" }
+  },
+  {
+    "id": "splitwire-turkey",
+    "name": "SplitWire-Turkey / WireSock",
+    "paths": ["%LOCALAPPDATA%\\SplitWire-Turkey", "%LOCALAPPDATA%\\WireSock Foundation"],
+    "processes": ["SplitWire-Turkey", "wiresock-client"],
+    "sensitive": true,
+    "note": { "tr": "VPN profilleri (anahtar içerir). Önce programı bir kez aç-kapat.", "en": "VPN profiles (contain keys). Open and close the program once first." }
+  },
+  {
+    "id": "steam-userdata",
+    "name": "Steam userdata",
+    "paths": ["%ProgramFiles(x86)%\\Steam\\userdata"],
+    "processes": ["steam"],
+    "default": false,
+    "note": { "tr": "Oyun ayarları ve Steam ekran görüntüleri (çoğu Steam Cloud'da zaten var)", "en": "Game configs and Steam screenshots (most are already in Steam Cloud)" }
+  }
+]
