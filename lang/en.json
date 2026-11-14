@@ -6,7 +6,7 @@
   "cat.apps": "App settings and saves",
 
   "item.programs.name": "Installed programs (winget)",
-  "item.programs.desc": "{0} programs found. Reinstalled in bulk with winget after the reset; anything not on winget goes to a \"manual install\" list.",
+  "item.programs.desc": "{0} programs found, {1} can be reinstalled automatically with winget after the reset. Pick them one by one below; anything not on winget goes to a \"manual install\" list.",
   "item.programs.desc.nowinget": "{0} programs found. winget is missing: only the list is saved (install 'App Installer' from the Microsoft Store).",
   "item.editor.desc": "{0} extensions + user settings (settings.json, key bindings, snippets)",
   "item.drivers.name": "Drivers",
@@ -161,6 +161,15 @@
   "err.registry": "Could not export the registry (code {0})",
   "registry.readme": "These .reg files are for reference only. Open them in Notepad to look up a setting.\r\nDo NOT double-click to import a whole file: it can break a fresh Windows install.\r\n",
   "log.app.running.backup": "Running programs: {0}. If files are locked the backup may be incomplete, closing them is recommended.",
+
+  "log.winget.reading": "Reading the winget package list...",
+  "log.winget.excluded": "{0} programs removed from the list (will not be installed)",
+  "log.winget.selected": "{0}/{1} programs selected",
+  "log.winget.none": "No programs selected, winget skipped",
+  "gui.programs.pick": "Choose programs one by one ({0}/{1} selected)",
+  "gui.programs.filter": "Search:",
+  "gui.programs.all": "Select shown",
+  "gui.programs.none": "Clear shown",
 
   "cli.flags": "Flags: * = selected  S = sensitive data  A = needs admin  B = backup only",
   "cli.not.admin": "Not running as administrator. Open PowerShell as administrator for drivers, Wi-Fi, power plan and similar items.",
