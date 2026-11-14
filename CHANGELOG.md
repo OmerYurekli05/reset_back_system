@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 - 2026-11-14
+- Eşleme kataloğuna eklendi: iCloud Outlook → iCloud (Store), Copilot → Microsoft Copilot (Store, varsayılan kapalı), VALORANT → RiotGames.Valorant.EU
+- Gerçek bir geri yüklemenin 27 programlık "elle kur" listesiyle regresyon testi: 11'i winget/Store ile kuruluyor, 11'i sürücü/bileşen olarak eleniyor, 5'i (winget'te olmayanlar) elle kur listesinde kalıyor
+
 ## 1.2.0 - 2026-11-14
 Başka bir bilgisayardaki gerçek kurulumda görülen 14 sorun düzeltildi:
 - **Programlar artık tek tek kuruluyor** (`winget import` yerine `winget install`): her paketin çıkış kodu kontrol ediliyor, App Installer işlemi yarıda kesemiyor (App Installer hiç kurulmuyor), zaten kurulu olanlar atlanıyor, takılan kurulum 30 dk sonra kesiliyor

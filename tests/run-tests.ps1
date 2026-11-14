@@ -302,6 +302,21 @@ Test-Case 'restore rebuilds packages from the files in the backup (issue 5) and 
     Assert-True (@($it.Data.exclude) -contains 'Microsoft.Teams') 'Teams off by default'
 }
 
+Test-Case 'real manual-install list from another PC is mostly resolved (v1.2.1)' {
+    # the 27 programs a real restore reported as "install by hand" before v1.2
+    $names = @('Age of Empires III', 'Canon LBP6020', 'Copilot', 'Discord', 'Dukto R6', 'EA app', 'Epic Games Launcher', 'Epic Online Services',
+        'Google Chrome', 'iCloud Outlook', 'Lenovo Now', 'Lenovo Vantage Service', 'Microsoft GameInput', 'Microsoft Windows Application Compatibility Fix Database',
+        'NVIDIA App 11.0.9.565', 'NVIDIA FrameView SDK 1.9.12728.38614306', ('NVIDIA HD Ses S' + [char]0xFC + 'r' + [char]0xFC + 'c' + [char]0xFC + 's' + [char]0xFC + ' 1.4.6.6'),
+        ('NVIDIA PhysX Sistem Yaz' + [char]0x131 + 'l' + [char]0x131 + 'm' + [char]0x131 + ' 9.26.0904'), 'Riot Vanguard', 'Rockstar Games Launcher', 'Rockstar Games SDK',
+        'SplitWire-Turkey 1.5.3', 'Steam', ('The Sims' + [char]0x2122 + ' 4'), 'VALORANT', 'WireSock Secure Connect', 'Xbox Service')
+    $inv = @($names | ForEach-Object { [pscustomobject]@{ Name = $_; Version = ''; Publisher = '' } })
+    $pk = @(Get-RBProgramPackages -Inventory $inv)
+    $mappedNames = @($pk | ForEach-Object { $_.name })
+    $manual = @($names | Where-Object { ($mappedNames -notcontains $_) -and -not (Test-RBProgramNoise $_) })
+    Assert-Equal $pk.Count 11 'programs installable through winget/msstore'
+    Assert-Equal (($manual | Sort-Object) -join '|') ((@('Age of Empires III', 'Dukto R6', 'Lenovo Now', 'SplitWire-Turkey 1.5.3', ('The Sims' + [char]0x2122 + ' 4')) | Sort-Object) -join '|')
+}
+
 Test-Case 'GUI opens in restore mode when a backup exists, no scan first (issue 13)' {
     $orig = ${function:Find-RBBackups}
     try {
