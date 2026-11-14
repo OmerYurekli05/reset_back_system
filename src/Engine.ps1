@@ -73,6 +73,14 @@ function Find-RBBackups {
     return @($found | Sort-Object Name -Descending | ForEach-Object { $_.FullName })
 }
 
+# The GUI opens in restore mode when a backup is found (typical right after a reset),
+# so it reads the backup instead of scanning the computer first.
+function Get-RBStartupMode {
+    $found = @(Find-RBBackups)
+    if ($found.Count) { return @{ Mode = 'restore'; Path = $found[0] } }
+    return @{ Mode = 'backup'; Path = '' }
+}
+
 function Resolve-RBBackupDir {
     param([string]$Path)
     if (-not $Path -or -not (Test-Path -LiteralPath $Path)) { return $null }
@@ -125,11 +133,18 @@ function New-RBManifestEntry {
     }
 }
 
+function Write-RBSummary {
+    param([int]$Ok, [int]$Fail, [int]$Skip, [int]$Warn)
+    if ($Warn -gt 0) { Write-RBLog (T 'log.summary.warn' $Ok $Fail $Skip $Warn) 'warn' }
+    else { Write-RBLog (T 'log.summary' $Ok $Fail $Skip) 'step' }
+}
+
 function Invoke-RBBackup {
     param([Parameter(Mandatory = $true)][object[]]$Items, [Parameter(Mandatory = $true)][string]$Target)
     $isAdmin = Test-RBAdmin
     $dry = [bool]$Global:RB.DryRun
-    $stamp = Get-Date -Format 'yyyy-MM-dd_HHmm'
+    $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
+    $Global:RB.SessionStamp = $stamp
     $dir = Join-Path $Target "ResetBack-$stamp"
     $logDir = if ($dry) { Join-Path $env:TEMP 'reset_back_system' } else { $dir }
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
@@ -147,7 +162,7 @@ function Invoke-RBBackup {
     }
     $sorted = @($Items | Sort-Object Order, Name)
     $entries = New-Object System.Collections.ArrayList
-    $ok = 0; $fail = 0; $skip = 0; $n = 0
+    $ok = 0; $fail = 0; $skip = 0; $warn = 0; $n = 0
     foreach ($it in $sorted) {
         $n++
         Set-RBProgress ($n - 1) $sorted.Count $it.Name
@@ -165,9 +180,10 @@ function Invoke-RBBackup {
                 $prov = $Global:RB.Providers[$it.Provider]
                 if (-not $prov) { throw (T 'err.provider' $it.Provider) }
                 $res = @(& $prov.Backup $it $itemDir) | Where-Object { $_ -is [hashtable] } | Select-Object -Last 1
-                if ($res) { foreach ($k in @($res.Keys)) { $entry.data[$k] = $res[$k] } }
+                $isWarn = ($res -and $res.status -eq 'warn')
+                if ($res) { foreach ($k in @($res.Keys)) { if ($k -ne 'status') { $entry.data[$k] = $res[$k] } } }
                 $entry.status = 'ok'; $ok++
-                Write-RBLog (T 'log.item.ok') 'ok'
+                if ($isWarn) { $warn++; $entry.message = 'warn'; Write-RBLog (T 'log.item.warn') 'warn' } else { Write-RBLog (T 'log.item.ok') 'ok' }
             } catch {
                 $entry.status = 'failed'; $entry.message = $_.Exception.Message; $fail++
                 Write-RBLog (T 'log.item.fail' $_.Exception.Message) 'error'
@@ -182,9 +198,9 @@ function Invoke-RBBackup {
         try { [IO.File]::WriteAllText((Join-Path $dir 'README.txt'), (T 'backup.readme'), [Text.Encoding]::UTF8) } catch { }
     }
     Set-RBProgress $sorted.Count $sorted.Count (T 'status.done')
-    Write-RBLog (T 'log.summary' $ok $fail $skip) 'step'
+    Write-RBSummary $ok $fail $skip $warn
     if (-not $dry) { Write-RBLog (T 'log.backup.where' $dir) 'ok' }
-    return [pscustomobject]@{ Dir = $dir; Ok = $ok; Failed = $fail; Skipped = $skip; LogFile = $Global:RB.LogFile; DryRun = $dry }
+    return [pscustomobject]@{ Dir = $dir; Ok = $ok; Failed = $fail; Skipped = $skip; Warned = $warn; LogFile = $Global:RB.LogFile; DryRun = $dry }
 }
 
 function Get-RBRestoreItems {
@@ -202,12 +218,13 @@ function Get-RBRestoreItems {
             -Description ([string]$e.description) -DescKey ([string]$e.descKey) -DescArgs @($e.descArgs) -Order ([int]$e.order) `
             -Sensitive ([bool]$e.sensitive) -RequiresAdmin ([bool]$e.requiresAdmin) -RestoreSupported ([bool]$e.restoreSupported) `
             -Processes @($e.processes) -Data $data -DefaultSelected $true
-        if ($data.packages -and @($it.DescArgs).Count -ge 2) {
-            # programs item: show how many packages the backup really holds
-            $it.DescArgs = @(@($it.DescArgs)[0], @($data.packages).Count)
+        $it.BackupDir = Join-Path $dir ([string]$e.dir)
+        # let the module refresh its data from the files really in the backup
+        $prov = $Global:RB.Providers[[string]$e.provider]
+        if ($prov.PrepareRestore) {
+            try { [void]@(& $prov.PrepareRestore $it $it.BackupDir) } catch { Write-RBLog (T 'log.discover.fail' $it.Name $_.Exception.Message) 'warn' }
             Update-RBItemText $it
         }
-        $it.BackupDir = Join-Path $dir ([string]$e.dir)
         $it.Size = Get-RBSize $it.BackupDir 1500
         # Sensitive items are selected on restore: the user already chose to back them up.
         $it.Selected = [bool]$e.restoreSupported
@@ -220,7 +237,8 @@ function Invoke-RBRestore {
     param([Parameter(Mandatory = $true)][object[]]$Items, [string]$BackupDir = '')
     $isAdmin = Test-RBAdmin
     $dry = [bool]$Global:RB.DryRun
-    $stamp = Get-Date -Format 'yyyy-MM-dd_HHmm'
+    $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
+    $Global:RB.SessionStamp = $stamp
     $logDir = Join-Path $env:LOCALAPPDATA 'reset_back_system\logs'
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
     $Global:RB.LogFile = Join-Path $logDir "restore-log-$stamp.txt"
@@ -231,7 +249,7 @@ function Invoke-RBRestore {
     if (-not $isAdmin) { Write-RBLog (T 'log.not.admin') 'warn' }
 
     $sorted = @($Items | Sort-Object Order, Name)
-    $ok = 0; $fail = 0; $skip = 0; $n = 0
+    $ok = 0; $fail = 0; $skip = 0; $warn = 0; $n = 0
     foreach ($it in $sorted) {
         $n++
         Set-RBProgress ($n - 1) $sorted.Count $it.Name
@@ -247,17 +265,17 @@ function Invoke-RBRestore {
             if (-not $prov) { throw (T 'err.provider' $it.Provider) }
             if (-not $prov.Restore) { throw (T 'log.restore.unsupported') }
             if (-not (Test-Path -LiteralPath $it.BackupDir)) { throw (T 'log.missing' $it.BackupDir) }
-            [void]@(& $prov.Restore $it $it.BackupDir)
+            $res = @(& $prov.Restore $it $it.BackupDir) | Where-Object { $_ -is [hashtable] } | Select-Object -Last 1
             $ok++
-            Write-RBLog (T 'log.item.ok') 'ok'
+            if ($res -and $res.status -eq 'warn') { $warn++; Write-RBLog (T 'log.item.warn') 'warn' } else { Write-RBLog (T 'log.item.ok') 'ok' }
         } catch {
             $fail++
             Write-RBLog (T 'log.item.fail' $_.Exception.Message) 'error'
         }
     }
     Set-RBProgress $sorted.Count $sorted.Count (T 'status.done')
-    Write-RBLog (T 'log.summary' $ok $fail $skip) 'step'
+    Write-RBSummary $ok $fail $skip $warn
     if (-not $dry) { Write-RBLog (T 'log.restore.reboot') 'info' }
     Write-RBLog (T 'log.logfile' $Global:RB.LogFile) 'info'
-    return [pscustomobject]@{ Dir = $BackupDir; Ok = $ok; Failed = $fail; Skipped = $skip; LogFile = $Global:RB.LogFile; DryRun = $dry }
+    return [pscustomobject]@{ Dir = $BackupDir; Ok = $ok; Failed = $fail; Skipped = $skip; Warned = $warn; LogFile = $Global:RB.LogFile; DryRun = $dry }
 }

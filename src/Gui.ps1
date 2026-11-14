@@ -296,12 +296,17 @@ function Set-RBUiBusy {
     foreach ($n in @('ModeBackup', 'ModeRestore', 'BrowseBtn', 'ScanBtn', 'AllBtn', 'NoneBtn', 'SaveProfileBtn', 'LoadProfileBtn', 'LangBtn', 'PathBox', 'DryRunChk', 'OverwriteChk', 'ItemsPanel')) {
         $ui[$n].IsEnabled = -not $Busy
     }
+    # a running scan can be abandoned by switching mode
+    if ($Busy -and $Global:RBGui.Worker -and $Global:RBGui.Worker.Kind -eq 'scan') {
+        $ui.ModeBackup.IsEnabled = $true
+        $ui.ModeRestore.IsEnabled = $true
+    }
     $ui.Window.Cursor = if ($Busy) { [Windows.Input.Cursors]::AppStarting } else { $null }
     Update-RBUiStart
 }
 
 function Start-RBUiWorker {
-    param([string]$WorkText, $WorkArgs, [scriptblock]$OnDone)
+    param([string]$WorkText, $WorkArgs, [scriptblock]$OnDone, [string]$Kind = 'run')
     $sync = [hashtable]::Synchronized(@{
             Queue = (New-Object 'System.Collections.Concurrent.ConcurrentQueue[object]')
             Done = $false; Result = $null; Error = $null; Progress = 0; Status = ''
@@ -316,9 +321,21 @@ function Start-RBUiWorker {
     foreach ($a in @($Global:RB.Root, $Global:RB_CODE, $Global:RB_EMBED, $Global:RB.Lang, $sync, $WorkText, $WorkArgs, $Global:RB.Options, [bool]$Global:RB.DryRun)) {
         [void]$ps.AddArgument($a)
     }
-    $Global:RBGui.Worker = @{ Sync = $sync; PS = $ps; Runspace = $rs; Handle = $ps.BeginInvoke(); OnDone = $OnDone }
+    $Global:RBGui.Worker = @{ Sync = $sync; PS = $ps; Runspace = $rs; Handle = $ps.BeginInvoke(); OnDone = $OnDone; Kind = $Kind }
     $Global:RBUI.Progress.Value = 0
     Set-RBUiBusy $true
+}
+
+function Stop-RBUiWorker {
+    $w = $Global:RBGui.Worker
+    if (-not $w) { return }
+    $Global:RBGui.Worker = $null
+    try { $w.PS.Stop() } catch { }
+    try { $w.PS.Dispose(); $w.Runspace.Close(); $w.Runspace.Dispose() } catch { }
+    Add-RBUiLog 'info' (T 'gui.scan.cancelled')
+    $Global:RBUI.Progress.Value = 0
+    $Global:RBUI.StatusText.Text = T 'gui.status.ready'
+    Set-RBUiBusy $false
 }
 
 function Invoke-RBUiTick {
@@ -344,7 +361,7 @@ function Start-RBUiScan {
     if ($g.Mode -eq 'backup') {
         $ui.EmptyText.Text = T 'gui.scanning'
         Add-RBUiLog 'step' (T 'gui.scanning')
-        Start-RBUiWorker 'param($a) , @(Get-RBBackupItems)' $null {
+        Start-RBUiWorker -Kind 'scan' 'param($a) , @(Get-RBBackupItems)' $null {
             param($s)
             $Global:RBUI.Progress.Value = 0
             $Global:RBUI.StatusText.Text = T 'gui.status.ready'
@@ -359,7 +376,7 @@ function Start-RBUiScan {
         $src = $ui.PathBox.Text.Trim()
         if (-not $src -or -not (Test-Path -LiteralPath $src)) { [void](Show-RBMessage (T 'gui.err.path') 'OK' 'Warning'); return }
         Add-RBUiLog 'step' (T 'gui.loading' $src)
-        Start-RBUiWorker 'param($a) Get-RBRestoreItems $a' $src {
+        Start-RBUiWorker -Kind 'scan' 'param($a) Get-RBRestoreItems $a' $src {
             param($s)
             $Global:RBUI.Progress.Value = 0
             $Global:RBUI.StatusText.Text = T 'gui.status.ready'
@@ -429,14 +446,16 @@ function Start-RBUiRun {
         if ($s.Error) { Add-RBUiLog 'error' $s.Error; [void](Show-RBMessage $s.Error 'OK' 'Error'); return }
         $r = @($s.Result)[-1]
         $Global:RBUI.StatusText.Text = T 'gui.status.done' $r.Ok $r.Failed $r.Skipped
+        $wl = if ($r.Warned) { T 'gui.done.warnline' $r.Warned } else { '' }
+        $icon = if ($r.Failed -or $r.Warned) { 'Warning' } else { 'Information' }
         if ($Global:RBGui.Mode -eq 'backup') {
-            if ($r.DryRun) { [void](Show-RBMessage (T 'gui.done.dry' $r.Ok $r.Failed $r.Skipped)) }
-            elseif ((Show-RBMessage (T 'gui.done.backup' $r.Ok $r.Failed $r.Skipped $r.Dir) 'YesNo' 'Information') -eq 'Yes') {
+            if ($r.DryRun) { [void](Show-RBMessage ((T 'gui.done.dry' $r.Ok $r.Failed $r.Skipped) + $wl) 'OK' $icon) }
+            elseif ((Show-RBMessage ((T 'gui.done.backup' $r.Ok $r.Failed $r.Skipped $r.Dir) + $wl) 'YesNo' $icon) -eq 'Yes') {
                 Start-Process explorer.exe -ArgumentList ('"{0}"' -f $r.Dir)
             }
         } else {
-            if ($r.DryRun) { [void](Show-RBMessage (T 'gui.done.dry' $r.Ok $r.Failed $r.Skipped)) }
-            else { [void](Show-RBMessage (T 'gui.done.restore' $r.Ok $r.Failed $r.Skipped $r.LogFile)) }
+            if ($r.DryRun) { [void](Show-RBMessage ((T 'gui.done.dry' $r.Ok $r.Failed $r.Skipped) + $wl) 'OK' $icon) }
+            else { [void](Show-RBMessage ((T 'gui.done.restore' $r.Ok $r.Failed $r.Skipped $r.LogFile) + $wl) 'OK' $icon) }
         }
     }
 
@@ -448,17 +467,23 @@ function Start-RBUiRun {
 }
 
 function Set-RBUiMode {
-    param([string]$Mode)
+    param([string]$Mode, [string]$Path)
     $ui = $Global:RBUI; $g = $Global:RBGui
+    # switching mode cancels a scan that is still running (never a real backup/restore)
+    if ($g.Worker -and $g.Worker.Kind -eq 'scan') { Stop-RBUiWorker }
     $g.Mode = $Mode
     $g.Items = @()
     $g.BackupDir = $null
     if ($Mode -eq 'backup') {
         $ui.PathBox.Text = Get-RBDefaultTarget
+    } elseif ($Path) {
+        $ui.PathBox.Text = $Path
     } else {
         $found = @(Find-RBBackups)
         $ui.PathBox.Text = if ($found.Count) { $found[0] } else { '' }
     }
+    $want = ($Mode -eq 'restore')
+    if ([bool]$ui.ModeRestore.IsChecked -ne $want) { $ui.ModeRestore.IsChecked = $want; $ui.ModeBackup.IsChecked = -not $want }
     Set-RBUiTexts
     Update-RBUiList
     if ($Mode -eq 'backup' -or $ui.PathBox.Text) { Start-RBUiScan }
@@ -545,7 +570,15 @@ function Show-RBGui {
         Set-RBUiTexts
         Add-RBUiLog 'info' ("reset_back_system $($Global:RB.Version) - " + $(if ($Global:RBGui.IsAdmin) { T 'gui.admin.yes' } else { T 'gui.admin.no' }))
         $win.Add_ContentRendered({
-                Set-RBUiMode 'backup'
+                # After a reset the app is usually opened to restore: when a backup is found,
+                # open in restore mode and read it instead of scanning the computer first.
+                $start = if ($Global:RBGuiOnShown) { @{ Mode = 'backup'; Path = '' } } else { Get-RBStartupMode }
+                if ($start.Mode -eq 'restore') {
+                    Add-RBUiLog 'info' (T 'gui.found.backup' $start.Path)
+                    Set-RBUiMode 'restore' $start.Path
+                } else {
+                    Set-RBUiMode 'backup'
+                }
                 # Hook for automated GUI smoke tests (tests\gui-smoke.ps1).
                 if ($Global:RBGuiOnShown) { & $Global:RBGuiOnShown }
             })
