@@ -1,81 +1,144 @@
 # reset_back_system
 
-> 🇹🇷 Türkçe aşağıda · 🇬🇧 English below
+> 🇹🇷 [Türkçe](#-türkçe) · 🇬🇧 [English](#-english)
+
+Windows'u formatlamadan önce **neyin yedekleneceğini onay kutularıyla seç**, format sonrası **hepsini doğru sırayla geri yükle**.
+Kurulum gerektirmez: Windows'ta hazır gelen PowerShell 5.1 ve WPF ile çalışır.
+
+<p align="center"><img src="docs/screenshot-tr.png" alt="reset_back_system" width="760"></p>
 
 ---
 
 ## 🇹🇷 Türkçe
 
-**reset_back_system**, Windows'u formatlamadan önce neyin yedekleneceğini **onay kutularıyla seçmeni** sağlayan, format sonrası da hepsini doğru sırayla geri yükleyen bir araçtır.
+### Hızlı başlangıç
+1. [Releases](https://github.com/OmerYurekli05/reset_back_system/releases) sayfasından son `reset_back_system-x.y.z.zip` dosyasını indir ve bir klasöre çıkar
+   (ya da `git clone https://github.com/OmerYurekli05/reset_back_system.git`).
+2. **`ResetBack.cmd`** dosyasına çift tıkla. Program yönetici izni ister (sürücü, Wi-Fi, güç planı için gerekli).
+3. **Format öncesi:** "Yedekle"yi seç, hedef olarak **harici disk ya da D: gibi format atılmayacak bir disk** göster, istediklerini işaretle, *Yedekle*'ye bas.
+4. **Format sonrası:** programı tekrar aç, "Geri Yükle"yi seç. Yedek otomatik bulunur (ya da `ResetBack-tarih` klasörünü göster), *Geri yükle*'ye bas.
 
-> ⚠️ Proje geliştirme aşamasında. Henüz kullanıma hazır değil.
+> İpucu: Önce **Deneme modu** ile çalıştır. Hiçbir şeye dokunmadan neyin yapılacağını gösterir.
 
-### Ne yedekler?
-| Kategori | İçerik |
-|---|---|
-| **Programlar** | Kurulu programlar (winget) → format sonrası toplu kurulum. winget'te olmayanlar için "elle kur" listesi |
-| **Editör eklentileri** | VS Code, Cursor, Antigravity, Windsurf eklentileri ve ayarları |
-| **Sistem** | Wi-Fi profilleri, sürücüler, güç planı, BitLocker kurtarma anahtarı, hosts, ortam değişkenleri |
-| **Kullanıcı verisi** | Masaüstü, Belgeler, `.ssh`, `.gitconfig`, oyun kayıtları ve bilinen uygulamaların ayarları |
+### Neler yedeklenir?
+| Kategori | İçerik | Geri yükleme |
+|---|---|---|
+| **Programlar** | Kurulu programların tam listesi + `winget export` | `winget import` ile en güncel sürümler kurulur. winget'te olmayanlar **"elle kur" listesi** olarak raporlanır |
+| **Editörler** | VS Code, Insiders, Cursor, Windsurf, Antigravity, VSCodium: eklenti listesi + `User` ayarları | Ayarlar kopyalanır, eklentiler tek tek kurulur |
+| **Sürücüler** | `pnputil /export-driver` ile üçüncü parti sürücüler | `pnputil /add-driver`. Format sonrası internet yoksa hayat kurtarır |
+| **Wi-Fi** | Kayıtlı ağlar, şifreleriyle *(hassas)* | `netsh wlan add profile` |
+| **Güç planı** | Etkin plan | İçe aktarılır ve etkinleştirilir |
+| **BitLocker** | Kurtarma anahtarları *(hassas)* | Sadece saklanır, geri yüklenmez |
+| **hosts / ortam değişkenleri** | hosts dosyası, kullanıcı değişkenleri | Path **birleştirilir**, üzerine yazılmaz |
+| **Registry** | HKCU / HKLM\SOFTWARE başvuru kopyası | Sadece saklanır (otomatik yüklemek sistemi bozabilir) |
+| **Kişisel klasörler** | Masaüstü, Belgeler, Resimler, İndirilenler, Videolar, Müzik | Yeni kullanıcı klasörlerine kopyalanır. OneDrive klasörleri işaretlenir |
+| **Uygulama ayarları** | `.ssh`, `.gitconfig`, Claude Code, Windows Terminal, Notepad++, OBS, Minecraft, ETS2/ATS, G HUB, MSI Afterburner, tarayıcı yer imleri, Firefox, VLC, qBittorrent, ShareX, Rainmeter, FileZilla, Steam… ([katalog](catalog/apps.json)) | Kendi yerlerine geri kopyalanır |
 
-### Nasıl çalışır?
-1. **Yedekle (format öncesi):** Program bilgisayarı tarar, bulduklarını listeler. Sen seçersin, seçtiklerin bir hedef klasöre (USB, D: vb.) yedeklenir.
-2. **Geri Yükle (format sonrası):** Yedek klasörü okunur, sadece yedekte olanlar gösterilir. Sen seçersin, program doğru sırayla geri yükler:
-   sürücüler → Wi-Fi → programlar → eklentiler → ayarlar → kullanıcı dosyaları.
+Sadece **bilgisayarda gerçekten bulunanlar** listelenir. Yollar `%APPDATA%`, `%DOCUMENTS%` gibi değişkenlerle saklanır, bu yüzden yeni sistemde kullanıcı adı farklı olsa bile doğru yere gider.
 
-### Özellikler (planlanan)
-- Türkçe / İngilizce arayüz
-- Deneme modu (dry-run): hiçbir şeye dokunmadan ne yapılacağını gösterir
-- Hassas veriler (Wi-Fi şifreleri, BitLocker anahtarları) için uyarı
-- Geri yüklemeden önce ilgili uygulama açıksa kapatma uyarısı
-- Topluluk tarafından genişletilebilen uygulama kataloğu (`catalog/apps.json`)
+### Güvenlik
+- **Hassas** öğeler (Wi-Fi şifreleri, SSH/VPN anahtarları, BitLocker) varsayılan olarak **seçili gelmez** ve yedeklemeden önce uyarı verilir.
+- Yedek, format atılacak **C: diskine** kaydedilmek istenirse uyarı verilir.
+- Geri yüklemeden önce ilgili program **açıksa** kapatman istenir.
+- Geri yükleme sırası: sürücüler → Wi-Fi → programlar → eklentiler → sistem ayarları → kişisel klasörler → uygulama ayarları.
+- Her işlem log dosyasına yazılır (yedek klasöründe ve `%LOCALAPPDATA%\reset_back_system\logs`).
 
-### Yol haritası
-| Sürüm | İçerik |
-|---|---|
-| v0.1 | Çekirdek + 4 modül, komut satırından çalışır |
-| v0.2 | WPF arayüz (onay kutulu ağaç, ilerleme çubuğu, log penceresi) |
-| v0.3 | Seçim profilleri, katalog genişletme, testler |
-| v1.0 | Tek `.exe`, GitHub Release |
-| v2 | C# / .NET sürümü (aynı yedek formatı ve katalog) |
+### Seçim profilleri
+Seçimini **Seçimi kaydet** ile bir dosyaya kaydedip sonra tekrar yükleyebilirsin. Hazır profiller [`profiles/`](profiles) klasöründe:
+`minimal.json` (programlar, editörler, Wi-Fi, Git), `developer.json`, `full.json`.
+
+### Komut satırı
+```powershell
+.\ResetBack.ps1 -List                                    # bulunanları listele
+.\ResetBack.ps1 -Backup -Target D:\ -DryRun              # deneme
+.\ResetBack.ps1 -Backup -Target D:\ -Items 'programs.*','editors.*','system.wifi','app.git'
+.\ResetBack.ps1 -Backup -Target D:\ -ProfilePath .\profiles\developer.json
+.\ResetBack.ps1 -Restore -Source D:\                     # en son yedeği bulur
+.\ResetBack.ps1 -Restore -Source D:\ResetBack-2026-11-14_1530 -Items 'app.*' -NoOverwrite
+```
+Diğer parametreler: `-All`, `-Force` (açık programlara rağmen devam), `-Lang tr|en`, `-SaveProfilePath`, `-NoElevate`, `-Version`.
+
+### Kataloğa uygulama ekleme
+Yeni bir uygulama eklemek için kod yazmana gerek yok: [`catalog/apps.json`](catalog/apps.json) dosyasına bir giriş eklemen yeterli. Ayrıntılar [docs/CATALOG.md](docs/CATALOG.md) içinde. PR'lar memnuniyetle karşılanır.
+
+### Geliştirme
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\run-tests.ps1                  # birim + uçtan uca testler
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\gui-smoke.ps1 -OutDir $env:TEMP\shots   # arayüz testi
+powershell -NoProfile -ExecutionPolicy Bypass -File build\build.ps1                      # dist\ altına tek dosya + zip
+```
+Proje yapısı: `src/Core.ps1` (yardımcılar), `src/Engine.ps1` (yedekle/geri yükle), `src/Providers/*.ps1` (modüller), `src/Gui.ps1` + `MainWindow.xaml` (arayüz), `lang/` (metinler), `catalog/` (uygulama ve editör tanımları).
 
 ---
 
 ## 🇬🇧 English
 
-**reset_back_system** lets you **pick with checkboxes** what to back up before reinstalling Windows, then restores everything in the right order afterwards.
+<p align="center"><img src="docs/screenshot-en.png" alt="reset_back_system" width="760"></p>
 
-> ⚠️ Work in progress. Not ready for use yet.
+### Quick start
+1. Download the latest `reset_back_system-x.y.z.zip` from [Releases](https://github.com/OmerYurekli05/reset_back_system/releases) and extract it
+   (or `git clone https://github.com/OmerYurekli05/reset_back_system.git`).
+2. Double-click **`ResetBack.cmd`**. It asks for admin rights (needed for drivers, Wi-Fi and the power plan).
+3. **Before the reset:** choose "Backup", point it to **an external drive or a disk that will not be wiped (e.g. D:)**, tick what you want, press *Back up*.
+4. **After the reset:** open it again, choose "Restore". The backup is found automatically (or point to the `ResetBack-date` folder), press *Restore*.
 
-### What does it back up?
-| Category | Contents |
-|---|---|
-| **Programs** | Installed programs (winget) → bulk reinstall after reset. A "manual install" list for anything not on winget |
-| **Editor extensions** | VS Code, Cursor, Antigravity, Windsurf extensions and settings |
-| **System** | Wi-Fi profiles, drivers, power plan, BitLocker recovery key, hosts, environment variables |
-| **User data** | Desktop, Documents, `.ssh`, `.gitconfig`, game saves and settings of known apps |
+> Tip: run it with **Dry run** first. It shows what would happen without touching anything.
 
-### How it works
-1. **Backup (before reset):** scans the PC and lists what it finds. You choose, and your selection is backed up to a target folder (USB, D:, …).
-2. **Restore (after reset):** reads the backup folder and shows only what it contains. You choose, and it restores in order:
-   drivers → Wi-Fi → programs → extensions → settings → user files.
+### What gets backed up?
+| Category | Contents | Restore |
+|---|---|---|
+| **Programs** | Full list of installed programs + `winget export` | `winget import` installs the latest versions. Anything not on winget is reported as a **manual install list** |
+| **Editors** | VS Code, Insiders, Cursor, Windsurf, Antigravity, VSCodium: extension list + `User` settings | Settings copied back, extensions reinstalled |
+| **Drivers** | Third-party drivers via `pnputil /export-driver` | `pnputil /add-driver`. A lifesaver when there is no network after the reset |
+| **Wi-Fi** | Saved networks with passwords *(sensitive)* | `netsh wlan add profile` |
+| **Power plan** | Active plan | Imported and activated |
+| **BitLocker** | Recovery keys *(sensitive)* | Kept for safekeeping only |
+| **hosts / environment** | hosts file, user variables | Path is **merged**, never overwritten |
+| **Registry** | HKCU / HKLM\SOFTWARE reference copy | Kept only (auto-importing can break Windows) |
+| **Personal folders** | Desktop, Documents, Pictures, Downloads, Videos, Music | Copied into the new user folders. OneDrive folders are flagged |
+| **App settings** | `.ssh`, `.gitconfig`, Claude Code, Windows Terminal, Notepad++, OBS, Minecraft, ETS2/ATS, G HUB, MSI Afterburner, browser bookmarks, Firefox, VLC, qBittorrent, ShareX, Rainmeter, FileZilla, Steam… ([catalog](catalog/apps.json)) | Copied back to their places |
 
-### Features (planned)
-- Turkish / English UI
-- Dry-run mode: shows what would happen without touching anything
-- Warnings for sensitive data (Wi-Fi passwords, BitLocker keys)
-- Asks you to close an app before its settings are restored
-- Community-extendable app catalog (`catalog/apps.json`)
+Only **what actually exists on the PC** is listed. Paths are stored with variables such as `%APPDATA%` and `%DOCUMENTS%`, so they land in the right place even if the user name changes.
 
-### Roadmap
-| Version | Contents |
-|---|---|
-| v0.1 | Core + 4 modules, command line |
-| v0.2 | WPF GUI (checkbox tree, progress bar, log window) |
-| v0.3 | Selection profiles, bigger catalog, tests |
-| v1.0 | Single `.exe`, GitHub Release |
-| v2 | C# / .NET version (same backup format and catalog) |
+### Safety
+- **Sensitive** items (Wi-Fi passwords, SSH/VPN keys, BitLocker) are **not selected by default** and trigger a warning.
+- Saving the backup on the **C: drive** that is about to be wiped triggers a warning.
+- Before restoring, you are asked to close the related programs if they are **running**.
+- Restore order: drivers → Wi-Fi → programs → extensions → system settings → personal folders → app settings.
+- Everything is logged (in the backup folder and in `%LOCALAPPDATA%\reset_back_system\logs`).
+
+### Selection profiles
+Save your selection with **Save selection** and load it later. Ready-made profiles live in [`profiles/`](profiles):
+`minimal.json` (programs, editors, Wi-Fi, Git), `developer.json`, `full.json`.
+
+### Command line
+```powershell
+.\ResetBack.ps1 -List
+.\ResetBack.ps1 -Backup -Target D:\ -DryRun
+.\ResetBack.ps1 -Backup -Target D:\ -Items 'programs.*','editors.*','system.wifi','app.git'
+.\ResetBack.ps1 -Backup -Target D:\ -ProfilePath .\profiles\developer.json
+.\ResetBack.ps1 -Restore -Source D:\
+.\ResetBack.ps1 -Restore -Source D:\ResetBack-2026-11-14_1530 -Items 'app.*' -NoOverwrite
+```
+More: `-All`, `-Force` (continue even if programs are running), `-Lang tr|en`, `-SaveProfilePath`, `-NoElevate`, `-Version`.
+
+### Adding apps to the catalog
+No code needed: add an entry to [`catalog/apps.json`](catalog/apps.json). See [docs/CATALOG.md](docs/CATALOG.md). Pull requests are welcome.
+
+### Development
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\run-tests.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\gui-smoke.ps1 -OutDir $env:TEMP\shots
+powershell -NoProfile -ExecutionPolicy Bypass -File build\build.ps1
+```
 
 ---
+
+### Yol haritası / Roadmap
+- [x] v0.1 Çekirdek + 4 modül, komut satırı / core, modules, CLI
+- [x] v0.2 WPF arayüz / GUI
+- [x] v0.3 Profiller, katalog, registry yedeği / profiles, catalog, registry snapshot
+- [x] v1.0 Tek dosya derleme, belgeler, release / single-file build, docs, release
+- [ ] v2 C# / .NET sürümü (aynı yedek formatı ve katalog) / C# rewrite using the same backup format and catalog
 
 License: [MIT](LICENSE)
