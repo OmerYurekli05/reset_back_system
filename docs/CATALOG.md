@@ -79,3 +79,12 @@ ResetBack-2026-11-14_1530/
 └─ app.<id>/p<n>/          one sub-folder per catalog path index
 ```
 `manifest.json` is language-neutral JSON so other tools (such as the planned C# version) can read the same backups.
+
+## winget eşleme kataloğu / winget map
+
+[`catalog/winget-map.json`](../catalog/winget-map.json):
+- `map`: kurulu programın adı (regex) → winget ya da msstore kimliği. `winget export` bir programı eşleyemezse (kullanıcıya özel kurulumlar, msstore kaynağı kapalıyken Store uygulamaları) buradan tamamlanır. `$1` kimlikte ilk regex grubuyla değiştirilir. / Program name regex → winget or msstore id, used when `winget export` cannot match an installed program.
+- `never`: asla kurulmayacak paketler (ör. `Microsoft.AppInstaller`: kurulurken winget'in kendisini kapatır). / Never installed (App Installer would close winget mid-run).
+- `defaultOff`: Windows ile gelen uygulamalar; listede görünür ama varsayılan seçili gelmez. / Shown but not selected by default.
+
+Yeni bir kimlik eklemeden önce doğrula / verify before adding: `winget show --id <id> --exact --source <winget|msstore>`

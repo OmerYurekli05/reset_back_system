@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0 - 2026-11-14
+Başka bir bilgisayardaki gerçek kurulumda görülen 14 sorun düzeltildi:
+- **Programlar artık tek tek kuruluyor** (`winget import` yerine `winget install`): her paketin çıkış kodu kontrol ediliyor, App Installer işlemi yarıda kesemiyor (App Installer hiç kurulmuyor), zaten kurulu olanlar atlanıyor, takılan kurulum 30 dk sonra kesiliyor
+- "Zaten kurulu" ve "yeniden başlatma gerekli" kodları başarı sayılıyor; gerçek hatalar kod ve nedeniyle loglanıyor
+- winget yoksa App Installer kaydı tetikleniyor; yine yoksa "elle kur" listesi yine de çıkarılıyor
+- Store (msstore) kaynağı kapalıysa açılıyor; Store uygulamaları yedekten düşmüyor
+- `catalog/winget-map.json`: export'un eşleyemediği programlar (Chrome, Discord, Steam, iCloud, Python, NVIDIA App…) ad → ID eşlemesiyle ekleniyor; eski yedeklere de uygulanıyor
+- Geri yüklemede paket listesi yedekteki gerçek dosyalardan kuruluyor (elle düzenlenmiş `winget.json` ile manifest uyuşmazlığı yok)
+- Windows ile gelen uygulamalar (Teams, Outlook, 365 Copilot, Edge, runtime'lar…) varsayılan olarak seçili gelmiyor
+- "Elle kur" listesi: sürücü, SDK, servis, yazıcı ve sistem bileşenleri filtreleniyor; sürüm iki kez yazılmıyor; dosya her seferinde zaman damgalı (`missing-programs-<tarih>.txt`)
+- Uyarılı sonuç: eksik ya da kurulamayan program varsa öğe "Tamam, ama uyarılar var" olarak raporlanıyor
+- winget'in İngilizce lisans/indirme satırları gösterilmiyor; sadece "kuruluyor / kuruldu / zaten kurulu / KURULAMADI"
+- Log ve yedek klasörü adlarında saniye var (aynı dakikadaki çalıştırmalar çakışmıyor)
+- Yedek bulunursa program doğrudan geri yükleme modunda açılıyor, önce bilgisayarı taramıyor; mod değişince süren tarama iptal ediliyor
+
 ## 1.1.0 - 2026-11-14
 - **Programları tek tek seçme:** winget listesindeki her program ayrı onay kutusu; arama kutusu, "görünenleri seç/kaldır"
   - Yedeklerken çıkarılan programlar yedeğe girmez, geri yüklerken çıkarılanlar kurulmaz

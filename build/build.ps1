@@ -21,7 +21,8 @@ $parts = @('src\Core.ps1', 'src\Engine.ps1') +
 $code = ($parts | ForEach-Object { [IO.File]::ReadAllText((Join-Path $root $_), [Text.Encoding]::UTF8) }) -join "`r`n"
 $version = [regex]::Match($code, "Version\s*=\s*'([^']+)'").Groups[1].Value
 
-$resources = @('lang\tr.json', 'lang\en.json', 'catalog\apps.json', 'catalog\editors.json', 'src\MainWindow.xaml')
+# every file read through Get-RBResourceText must be listed here (tests check this)
+$resources = @('lang\tr.json', 'lang\en.json', 'catalog\apps.json', 'catalog\editors.json', 'catalog\winget-map.json', 'src\MainWindow.xaml')
 $sb = New-Object Text.StringBuilder
 [void]$sb.AppendLine("# ---- embedded by build\build.ps1 (reset_back_system $version) ----")
 [void]$sb.AppendLine('$Global:RB_ROOT = if ($PSScriptRoot) { $PSScriptRoot } else { [AppDomain]::CurrentDomain.BaseDirectory.TrimEnd(''\'') }')

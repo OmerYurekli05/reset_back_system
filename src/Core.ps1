@@ -5,7 +5,7 @@
 if (-not $Global:RB_ROOT) { $Global:RB_ROOT = (Get-Location).Path }
 
 $Global:RB = @{
-    Version      = '1.1.0'
+    Version      = '1.2.0'
     Root         = $Global:RB_ROOT
     Lang         = 'en'
     Strings      = @{}
@@ -198,22 +198,31 @@ function Get-RBRunningProcesses {
 
 # Runs an executable with an exact argument string (needed for netsh/powercfg quoting).
 function Invoke-RBExe {
-    param([string]$File, [string]$Arguments = '')
+    param([string]$File, [string]$Arguments = '', [int]$TimeoutSec = 0, [switch]$Utf8)
     $psi = New-Object Diagnostics.ProcessStartInfo $File, $Arguments
     $psi.UseShellExecute = $false
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.CreateNoWindow = $true
     try {
-        $enc = [Text.Encoding]::GetEncoding([Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage)
+        $enc = if ($Utf8) { New-Object Text.UTF8Encoding $false } else { [Text.Encoding]::GetEncoding([Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage) }
         $psi.StandardOutputEncoding = $enc
         $psi.StandardErrorEncoding = $enc
     } catch { }
     $p = [Diagnostics.Process]::Start($psi)
     $errTask = $p.StandardError.ReadToEndAsync()
-    $out = $p.StandardOutput.ReadToEnd()
+    $outTask = $p.StandardOutput.ReadToEndAsync()
+    $timedOut = $false
+    if ($TimeoutSec -gt 0) {
+        if (-not $p.WaitForExit($TimeoutSec * 1000)) {
+            $timedOut = $true
+            try { $p.Kill() } catch { }
+            [void]$p.WaitForExit(5000)
+        }
+    }
     $p.WaitForExit()
-    return [pscustomobject]@{ Code = $p.ExitCode; Output = ($out + $errTask.Result) }
+    $code = if ($timedOut) { -1 } else { $p.ExitCode }
+    return [pscustomobject]@{ Code = $code; Output = ($outTask.Result + $errTask.Result); TimedOut = $timedOut }
 }
 
 function Get-RBSize {

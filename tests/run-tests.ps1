@@ -78,6 +78,23 @@ Test-Case 'bundled profiles are valid' {
     }
 }
 
+Test-Case 'every resource the code reads is embedded by the build' {
+    $build = Get-Content -Raw (Join-Path $root 'build\build.ps1')
+    $used = @([regex]::Matches($Global:RB_CODE, "Get-RBResourceText '([^'`"]+)'") | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch '\$' } | Sort-Object -Unique)
+    $missing = @($used | Where-Object { $build.IndexOf("'$_'") -lt 0 })
+    Assert-True ($missing.Count -eq 0) ('not embedded: ' + ($missing -join ', '))
+}
+
+Test-Case 'winget map catalog is valid' {
+    $m = Read-RBJsonText (Get-RBResourceText 'catalog\winget-map.json')
+    Assert-True (@($m.map).Count -gt 20) 'map too small'
+    foreach ($e in @($m.map)) {
+        Assert-True ($e.match -and $e.id -and @('winget', 'msstore') -contains $e.source) "bad entry: $($e.id)"
+        [void][regex]::new($e.match)
+    }
+    Assert-True (@($m.never) -contains 'Microsoft.AppInstaller') 'App Installer must be in never'
+}
+
 Write-Host 'Core' -ForegroundColor Cyan
 
 Test-Case 'Expand-RBPath resolves tokens and env vars' {
@@ -211,6 +228,89 @@ Test-Case 'program include/exclude filters and profiles' {
     $it.Data.exclude = @()
     [void](Select-RBItems -Items @($it) -ProfilePath $pf)
     Assert-Equal @($it.Data.exclude).Count 2 'profile restores program exclusions'
+}
+
+Test-Case 'winget map adds programs export missed, never installs App Installer (issues 1, 3, 4)' {
+    $json = Join-Path $tmp 'exp.json'
+    Write-RBJsonFile @{ Sources = @(@{ SourceDetails = @{ Name = 'winget' }; Packages = @(@{ PackageIdentifier = 'VideoLAN.VLC' }, @{ PackageIdentifier = 'Microsoft.AppInstaller' }) }) } $json
+    $inv = @(
+        [pscustomobject]@{ Name = 'Google Chrome'; Version = '157'; Publisher = 'Google' },
+        [pscustomobject]@{ Name = 'Discord'; Version = '1'; Publisher = 'Discord' },
+        [pscustomobject]@{ Name = 'iCloud'; Version = '15'; Publisher = 'Apple' },
+        [pscustomobject]@{ Name = 'Python 3.11.9 (64-bit)'; Version = '3.11.9'; Publisher = 'PSF' },
+        [pscustomobject]@{ Name = 'VLC media player'; Version = '3'; Publisher = 'VideoLAN' }
+    )
+    $pk = @(Get-RBProgramPackages -JsonPath $json -Inventory $inv)
+    $ids = @($pk | ForEach-Object { $_.id })
+    foreach ($want in 'Google.Chrome', 'Discord.Discord', '9PKTQ5699M62', 'Python.Python.3.11', 'VideoLAN.VLC') { Assert-True ($ids -contains $want) "missing $want" }
+    Assert-True ($ids -notcontains 'Microsoft.AppInstaller') 'App Installer must never be installed'
+    Assert-Equal @($ids | Where-Object { $_ -eq 'VideoLAN.VLC' }).Count 1 'no duplicates'
+    Assert-Equal (@($pk | Where-Object { $_.id -eq '9PKTQ5699M62' })[0].source) 'msstore'
+    $wf = Join-Path $tmp 'wg-out.json'
+    Write-RBWingetFile $pk $wf
+    Assert-Equal (Get-RBWingetPackageCount $wf) $pk.Count 'winget.json matches the package list (issue 5)'
+}
+
+Test-Case 'Windows bundled apps are not selected by default on restore (issue 14)' {
+    $pk = @(@{ id = 'Microsoft.Teams'; name = 'Teams' }, @{ id = 'Microsoft.Teams.Free'; name = 'Teams' }, @{ id = 'Microsoft.365Copilot'; name = 'Copilot' },
+        @{ id = 'Microsoft.Outlook'; name = 'Outlook' }, @{ id = 'Google.Chrome'; name = 'Chrome' })
+    $off = @(Get-RBDefaultOffIds $pk)
+    Assert-Equal $off.Count 4
+    Assert-True ($off -notcontains 'Google.Chrome')
+}
+
+Test-Case 'manual-install list drops drivers and components, no doubled versions (issues 6, 7)' {
+    foreach ($n in 'NVIDIA FrameView SDK 1.9', ('NVIDIA HD Ses S' + [char]0xFC + 'r' + [char]0xFC + 'c' + [char]0xFC + 's' + [char]0xFC), ('NVIDIA PhysX Sistem Yaz' + [char]0x131 + 'l' + [char]0x131 + 'm' + [char]0x131),
+        'Canon LBP6020', 'Microsoft Windows Application Compatibility Fix Database', 'Lenovo Vantage Service', 'Xbox Service',
+        'Microsoft GameInput', 'Epic Online Services', 'Rockstar Games SDK', 'Riot Vanguard') {
+        Assert-True (Test-RBProgramNoise $n) "not filtered: $n"
+    }
+    foreach ($n in 'Steam', 'VALORANT', 'Discord', 'NVIDIA App', 'Age of Empires III', 'Rockstar Games Launcher') { Assert-True (-not (Test-RBProgramNoise $n)) "wrongly filtered: $n" }
+    Assert-Equal (Format-RBProgramLine ([pscustomobject]@{ Name = 'NVIDIA App 11.0.9.565'; Version = '11.0.9.565' })) 'NVIDIA App 11.0.9.565'
+    Assert-Equal (Format-RBProgramLine ([pscustomobject]@{ Name = 'Canon LBP6020 '; Version = '' })) 'Canon LBP6020'
+    Assert-Equal (Format-RBProgramLine ([pscustomobject]@{ Name = 'Steam'; Version = '2.10' })) 'Steam 2.10'
+}
+
+Test-Case 'winget exit codes: already installed / reboot count as success (issue 8)' {
+    Assert-Equal $Global:RBWingetOk[-1978335189] 'already'
+    Assert-Equal $Global:RBWingetOk[0] 'ok'
+    Assert-True (-not $Global:RBWingetOk.ContainsKey(-1978335212)) 'real failures are not ok'
+}
+
+Test-Case 'a module warning is reported as warning, not plain success (issue 11)' {
+    Register-RBProvider @{ Name = 'test.warn'; Discover = $null; Backup = { param($i, $d) @{ status = 'warn'; x = 1 } }; Restore = { param($i, $d) @{ status = 'warn' } } }
+    $it = New-RBItem -Id 'test.warn' -Provider 'test.warn' -Category apps -Name 'warn test'
+    $r = Invoke-RBBackup -Items @($it) -Target (Join-Path $tmp 'warnbk')
+    Assert-Equal $r.Warned 1
+    Assert-True ((Split-Path -Leaf $r.Dir) -match '^ResetBack-\d{4}-\d{2}-\d{2}_\d{6}$') 'stamp has seconds (issue 9)'
+    $info = Get-RBRestoreItems $r.Dir
+    $rr = Invoke-RBRestore -Items $info.Items -BackupDir $info.Dir
+    Assert-Equal $rr.Warned 1
+    Assert-True ((Split-Path -Leaf $rr.LogFile) -match '_\d{6}\.txt$') 'restore log has seconds (issue 9)'
+    $Global:RB.Providers.Remove('test.warn')
+}
+
+Test-Case 'restore rebuilds packages from the files in the backup (issue 5) and keeps defaults off (issue 14)' {
+    $bd = Join-Path $tmp 'prep'; New-Item -ItemType Directory -Force $bd | Out-Null
+    Write-RBJsonFile @{ Sources = @(@{ SourceDetails = @{ Name = 'winget' }; Packages = @(@{ PackageIdentifier = 'VideoLAN.VLC' }, @{ PackageIdentifier = 'Microsoft.Teams' }) }) } (Join-Path $bd 'winget.json')
+    @([pscustomobject]@{ Name = 'Discord'; Version = '1'; Publisher = 'Discord' }) | Export-Csv (Join-Path $bd 'installed-programs.csv') -NoTypeInformation -Encoding UTF8
+    $it = New-RBItem -Id 'programs.winget' -Provider programs -Category programs -DescArgs @(5, 41) -Data @{ packages = @(@{ id = 'A.B'; name = 'stale' }); wingetPackages = 41 }
+    & $Global:RB.Providers['programs'].PrepareRestore $it $bd
+    $ids = @($it.Data.packages | ForEach-Object { $_.id })
+    Assert-Equal $ids.Count 3 'VLC + Teams from json, Discord from map'
+    Assert-Equal $it.Data.wingetPackages 3
+    Assert-True (@($it.Data.exclude) -contains 'Microsoft.Teams') 'Teams off by default'
+}
+
+Test-Case 'GUI opens in restore mode when a backup exists, no scan first (issue 13)' {
+    $orig = ${function:Find-RBBackups}
+    try {
+        ${function:Find-RBBackups} = { @('D:\ResetBack-2026-11-14_175000') }
+        $s = Get-RBStartupMode
+        Assert-Equal $s.Mode 'restore'; Assert-Equal $s.Path 'D:\ResetBack-2026-11-14_175000'
+        ${function:Find-RBBackups} = { @() }
+        Assert-Equal (Get-RBStartupMode).Mode 'backup'
+    } finally { ${function:Find-RBBackups} = $orig }
 }
 
 Test-Case 'CLI accepts a single selected item (PS 5.1 scalar .Count regression)' {
